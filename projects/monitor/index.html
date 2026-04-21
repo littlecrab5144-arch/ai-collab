@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 協作監察平台</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --green: #3fb950;
+      --yellow: #d29922;
+      --blue: #58a6ff;
+      --purple: #bc8cff;
+      --red: #f85149;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    header h1 span { color: var(--blue); }
+
+    .refresh-info {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .refresh-info strong { color: var(--green); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .card h2 {
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+
+    /* AI Status Cards */
+    .ai-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .ai-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ai-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+
+    .ai-card.ai1::before { background: var(--yellow); }
+    .ai-card.ai2::before { background: var(--green); }
+    .ai-card.ai3::before { background: var(--blue); }
+
+    .ai-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .ai-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .ai1 .ai-avatar { background: rgba(210,153,34,0.2); color: var(--yellow); }
+    .ai2 .ai-avatar { background: rgba(63,185,80,0.2); color: var(--green); }
+    .ai3 .ai-avatar { background: rgba(88,166,255,0.2); color: var(--blue); }
+
+    .ai-name { font-weight: 600; font-size: 0.95rem; }
+    .ai-role { font-size: 0.75rem; color: var(--muted); }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+
+    .status-badge.idle { background: rgba(139,148,158,0.15); color: var(--muted); }
+    .status-badge.working { background: rgba(63,185,80,0.15); color: var(--green); }
+    .status-badge.reviewing { background: rgba(210,153,34,0.15); color: var(--yellow); }
+
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .status-dot.pulse {
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .ai-task {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .ai-task strong { color: var(--text); }
+
+    /* Lock status */
+    .lock-list { list-style: none; }
+    .lock-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.83rem;
+    }
+    .lock-item:last-child { border-bottom: none; }
+    .lock-icon { font-size: 0.9rem; }
+    .lock-file { color: var(--blue); font-family: monospace; }
+    .lock-by { color: var(--muted); margin-left: auto; font-size: 0.75rem; }
+
+    /* Activity feed */
+    .activity-list { list-style: none; }
+    .activity-item {
+      display: flex;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+    .activity-time { color: var(--muted); font-size: 0.75rem; }
+
+    /* Stats */
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-value { font-weight: 700; font-size: 1rem; }
+
+    /* Loading */
+    .loading {
+      color: var(--muted);
+      font-size: 0.82rem;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .error-msg {
+      color: var(--red);
+      font-size: 0.82rem;
+      padding: 8px;
+      background: rgba(248,81,73,0.1);
+      border-radius: 6px;
+      margin-top: 8px;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.75rem;
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🦀 <span>AI</span> 協作監察平台</h1>
+  <div class="refresh-info">
+    自動刷新：每 <strong>60秒</strong> 一次 &nbsp;|&nbsp;
+    最後更新：<span id="last-update">—</span>
+  </div>
+</header>
+
+<!-- AI Status -->
+<div class="ai-grid" id="ai-status-grid">
+  <div class="ai-card ai1">
+    <div class="ai-header">
+      <div class="ai-avatar">一</div>
+      <div>
+        <div class="ai-name">AI一號 · MiniMax</div>
+        <div class="ai-role">內容生成 · 文案 · 分析報告</div>
+      </div>
+    </div>
+    <div class="status-badge idle"><span class="status-dot"></span> 待命中</div>
+    <div class="ai-task">Branch：<strong>sandbox/minimax-*</strong></div>
+  </div>
+
+  <div class="ai-card ai2">
+    <div class="ai-header">
+      <div class="ai-avatar">二</div>
+      <div>
+        <div class="ai-name">AI二號 · 小螃蟹</div>
+        <div class="ai-role">代碼審核 · 部署 · 爬蟲 · 後端</div>
+      </div>
+    </div>
+    <div class="status-badge idle"><span class="status-dot"></span> 待命中</div>
+    <div class="ai-task">Branch：<strong>sandbox/crab-*</strong></div>
+  </div>
+
+  <div class="ai-card ai3">
+    <div class="ai-header">
+      <div class="ai-avatar">三</div>
+      <div>
+        <div class="ai-name">AI三號 · Claude</div>
+        <div class="ai-role">前端UI · 測試 · 文檔</div>
+      </div>
+    </div>
+    <div class="status-badge working"><span class="status-dot pulse"></span> 工作中</div>
+    <div class="ai-task">目前任務：<strong>建立 Dashboard UI</strong><br/>Branch：sandbox/claude3-monitor-ui</div>
+  </div>
+</div>
+
+<!-- Stats + Locks + Activity -->
+<div class="grid">
+
+  <div class="card">
+    <h2>📊 貢獻統計</h2>
+    <div id="stats-content" class="loading">載入中…</div>
+  </div>
+
+  <div class="card">
+    <h2>🔒 文件鎖定狀態</h2>
+    <div id="lock-content" class="loading">載入中…</div>
+  </div>
+
+  <div class="card">
+    <h2>📋 最近活動</h2>
+    <div id="activity-content" class="loading">載入中…</div>
+  </div>
+
+</div>
+
+<footer>
+  AI 協作平台 · Repo: littlecrab5144-arch/ai-collab · 由 AI三號 (Claude) 建立
+</footer>
+
+<script>
+const REPO = 'littlecrab5144-arch/ai-collab';
+const API = `https://api.github.com/repos/${REPO}`;
+
+const AI_MAP = {
+  minimax: { name: 'AI一號 · MiniMax', color: '#d29922' },
+  crab:    { name: 'AI二號 · 小螃蟹', color: '#3fb950' },
+  claude:  { name: 'AI三號 · Claude', color: '#58a6ff' },
+};
+
+function timeAgo(dateStr) {
+  const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+  if (diff < 60) return `${diff}秒前`;
+  if (diff < 3600) return `${Math.floor(diff/60)}分鐘前`;
+  if (diff < 86400) return `${Math.floor(diff/3600)}小時前`;
+  return `${Math.floor(diff/86400)}天前`;
+}
+
+function aiColor(msg) {
+  if (!msg) return '#8b949e';
+  const m = msg.toLowerCase();
+  if (m.includes('minimax')) return '#d29922';
+  if (m.includes('crab') || m.includes('螃蟹')) return '#3fb950';
+  if (m.includes('claude')) return '#58a6ff';
+  return '#8b949e';
+}
+
+async function loadCommits() {
+  try {
+    const res = await fetch(`${API}/commits?per_page=20`);
+    if (!res.ok) throw new Error(res.status);
+    const commits = await res.json();
+
+    // Stats
+    const counts = { minimax: 0, crab: 0, claude: 0, other: 0 };
+    commits.forEach(c => {
+      const msg = (c.commit.message || '').toLowerCase();
+      if (msg.includes('minimax')) counts.minimax++;
+      else if (msg.includes('crab') || msg.includes('螃蟹')) counts.crab++;
+      else if (msg.includes('claude')) counts.claude++;
+      else counts.other++;
+    });
+
+    document.getElementById('stats-content').innerHTML = `
+      <div class="stat-row"><span>AI一號 commits</span><span class="stat-value" style="color:#d29922">${counts.minimax}</span></div>
+      <div class="stat-row"><span>AI二號 commits</span><span class="stat-value" style="color:#3fb950">${counts.crab}</span></div>
+      <div class="stat-row"><span>AI三號 commits</span><span class="stat-value" style="color:#58a6ff">${counts.claude}</span></div>
+      <div class="stat-row"><span>其他 commits</span><span class="stat-value" style="color:#8b949e">${counts.other}</span></div>
+      <div class="stat-row"><span>總計</span><span class="stat-value">${commits.length}</span></div>
+    `;
+
+    // Activity
+    const items = commits.slice(0, 8).map(c => `
+      <li class="activity-item">
+        <div class="activity-dot" style="background:${aiColor(c.commit.message)}"></div>
+        <div>
+          <div>${c.commit.message.split('\n')[0]}</div>
+          <div class="activity-time">${timeAgo(c.commit.author.date)} · ${c.commit.author.name}</div>
+        </div>
+      </li>
+    `).join('');
+    document.getElementById('activity-content').innerHTML = `<ul class="activity-list">${items}</ul>`;
+
+  } catch(e) {
+    document.getElementById('stats-content').innerHTML = `<div class="error-msg">⚠️ 無法載入 (${e.message})</div>`;
+    document.getElementById('activity-content').innerHTML = `<div class="error-msg">⚠️ 無法載入</div>`;
+  }
+}
+
+async function loadStatus() {
+  try {
+    const res = await fetch(`${API}/contents/STATUS.md`);
+    if (!res.ok) throw new Error('STATUS.md 未找到');
+    const data = await res.json();
+    const text = atob(data.content);
+
+    // Parse locked files from STATUS.md
+    const lines = text.split('\n').filter(l => l.includes('🔒') || l.toLowerCase().includes('lock'));
+    if (lines.length === 0) {
+      document.getElementById('lock-content').innerHTML = '<div style="color:var(--muted);font-size:0.82rem;padding:8px 0">✅ 目前沒有文件被鎖定</div>';
+    } else {
+      const items = lines.map(l => `
+        <li class="lock-item">
+          <span class="lock-icon">🔒</span>
+          <span class="lock-file">${l.trim()}</span>
+        </li>
+      `).join('');
+      document.getElementById('lock-content').innerHTML = `<ul class="lock-list">${items}</ul>`;
+    }
+  } catch(e) {
+    document.getElementById('lock-content').innerHTML = '<div style="color:var(--muted);font-size:0.82rem;padding:8px 0">✅ 目前沒有文件被鎖定</div>';
+  }
+}
+
+function updateTime() {
+  document.getElementById('last-update').textContent = new Date().toLocaleTimeString('zh-HK');
+}
+
+async function refresh() {
+  await Promise.all([loadCommits(), loadStatus()]);
+  updateTime();
+}
+
+refresh();
+setInterval(refresh, 60000);
+</script>
+<script src="github-api.js"></script>
+</body>
+</html>
