@@ -1,0 +1,16 @@
+# 敏感文件
+*token*
+*secret*
+*.key
+.env
+*.env
+*password*
+
+# 本地數據
+data/
+*.json.local
+*_state.json
+
+# Python
+__pycache__/
+*.pyc
