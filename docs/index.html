@@ -428,8 +428,10 @@ function doLogout() {
 }
 
 // ── GitHub API ──
-function ghHeaders() {
-  return ghToken ? { 'Authorization': `Bearer ${ghToken}`, 'Content-Type': 'application/json' } : {};
+function ghHeaders(write=false) {
+  if (ghToken) return { 'Authorization': `Bearer ${ghToken}`, 'Content-Type': 'application/json' };
+  if (write) return null; // 寫操作必須有 token
+  return {}; // 讀操作無 token 也可（公開 repo，60次/小時）
 }
 
 // 離線緩存
@@ -500,6 +502,7 @@ async function fetchCommits() {
 // ── 任務：接 ──
 async function claimTask(num) {
   if (!me) { alert('請先登入'); return; }
+  if (!ghToken) { alert('請輸入 GitHub Token 才能接任務'); return; }
   const myActive = allIssues.filter(i => i.state==='open' && i.labels.some(l=>l.name==='進行中') && i.labels.some(l=>l.name===me.label));
   if (myActive.length) { alert('你已有進行中任務！'); return; }
   flashCard(num);
@@ -514,6 +517,7 @@ async function claimTask(num) {
 // ── 任務：完成 ──
 async function doneTask(num) {
   if (!me) return;
+  if (!ghToken) { alert('請輸入 GitHub Token 才能完成任務'); return; }
   launchConfetti();
   flashCard(num);
   try {
