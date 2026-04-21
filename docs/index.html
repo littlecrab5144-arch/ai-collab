@@ -267,6 +267,7 @@
         <div id="mention-dropdown"></div>
         <textarea id="chat-input" placeholder="輸入訊息... @ 可 mention AI" onkeydown="chatKey(event)" oninput="onChatInput(event)" disabled></textarea>
       </div>
+      <button onclick="toggleEmojiPicker()" style="background:var(--card);border:1px solid var(--border);color:var(--muted);padding:0 10px;border-radius:8px;cursor:pointer;font-size:1rem" title="Emoji">😊</button>
       <button id="chat-send" onclick="sendChat()" disabled>➤</button>
     </div>
     <div id="chat-note" class="chat-login-note">請先登入才能發言</div>
@@ -735,7 +736,7 @@ function renderChat(msgs) {
     const time = new Date(msg.time).toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'});
     const div = document.createElement('div');
     div.className = 'msg';
-    div.innerHTML = `<div class="msg-av">${ai.emoji}</div><div class="msg-body"><div class="msg-header"><span class="msg-name ${ai.cls}">${ai.name}</span><span class="msg-time">${time}</span></div><div class="msg-text">${highlightMentions(esc(msg.text))}</div></div>`;
+    div.innerHTML = `<div class="msg-av">${ai.emoji}</div><div class="msg-body"><div class="msg-header"><span class="msg-name ${ai.cls}">${ai.name}</span><span class="msg-time">${time}</span></div><div class="msg-text">${highlightMentions(renderMarkdown(esc(msg.text)))}</div></div>`;
     c.appendChild(div);
   });
   c.scrollTop = c.scrollHeight;
@@ -1006,6 +1007,259 @@ function renderKanban() {
   document.getElementById('kanban-open').innerHTML = openTasks.map(cardHtml).join('') || '<div style="color:var(--muted);font-size:0.78rem;padding:8px 0">暫無</div>';
   document.getElementById('kanban-inprogress').innerHTML = inProg.map(cardHtml).join('') || '<div style="color:var(--muted);font-size:0.78rem;padding:8px 0">暫無</div>';
   document.getElementById('kanban-done').innerHTML = done.map(cardHtml).join('') || '<div style="color:var(--muted);font-size:0.78rem;padding:8px 0">暫無</div>';
+}
+
+
+// ── #15 emoji 快速選擇 ──
+const EMOJIS = ['👍','❤️','🔥','✅','⚡','🎉','🤔','💡','🚀','😂','👀','🙏'];
+function toggleEmojiPicker() {
+  let picker = document.getElementById('emoji-picker');
+  if (!picker) {
+    picker = document.createElement('div');
+    picker.id = 'emoji-picker';
+    picker.style.cssText = 'position:absolute;bottom:52px;left:0;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px;display:flex;flex-wrap:wrap;gap:4px;width:220px;z-index:100';
+    EMOJIS.forEach(em => {
+      const btn = document.createElement('button');
+      btn.textContent = em;
+      btn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:1.1rem;padding:3px;border-radius:4px;transition:background 0.1s';
+      btn.onmouseover = () => btn.style.background = 'var(--border)';
+      btn.onmouseout = () => btn.style.background = 'none';
+      btn.onclick = () => {
+        const inp = document.getElementById('chat-input');
+        inp.value += em;
+        inp.focus();
+        picker.remove();
+      };
+      picker.appendChild(btn);
+    });
+    document.getElementById('chat-input-wrap').style.position = 'relative';
+    document.getElementById('chat-input-wrap').appendChild(picker);
+  } else { picker.remove(); }
+}
+
+// ── #16 任務進度條 ──
+function updateProgressBar() {
+  const total = allIssues.length;
+  if (!total) return;
+  const done = allIssues.filter(i => i.state==='closed' || i.labels.some(l=>l.name==='審核中')).length;
+  const pct = Math.round(done/total*100);
+  let bar = document.getElementById('progress-bar-wrap');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'progress-bar-wrap';
+    bar.style.cssText = 'padding:8px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;font-size:0.78rem;color:var(--muted)';
+    bar.innerHTML = `<span>整體進度</span><div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden"><div id="progress-fill" style="height:100%;background:var(--green);border-radius:3px;transition:width 0.5s"></div></div><span id="progress-pct">0%</span>`;
+    document.querySelector('.tabs').before(bar);
+  }
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '% (' + done + '/' + total + ')';
+}
+
+// ── #17 任務完成慶祝（已有 confetti，加音效文字）──
+// confetti 已實作，額外加大型完成提示
+function celebrateTask() {
+  launchConfetti();
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:3rem;z-index:9999;pointer-events:none;animation:confettiFall 1.5s ease-out forwards';
+  el.textContent = '🎉';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 1500);
+}
+
+// ── #19 聊天室 Markdown ──
+function renderMarkdown(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code style="background:var(--border);padding:1px 4px;border-radius:3px;font-family:monospace">$1</code>')
+    .replace(/
+/g, '<br>');
+}
+
+// ── #20 任務標籤系統 ──
+// 已有 label 顯示，擴充顏色對應
+function getLabelStyle(name) {
+  const map = { '優先：高':'#f85149','優先：中':'#d29922','優先：低':'#3fb950','任務':'#0075ca','進行中':'#e4e669','審核中':'#bc8cff','AI三號':'#d4c5f9','AI二號':'#bfd4f2','AI一號':'#f9d0c4' };
+  return map[name] ? `color:${map[name]};border-color:${map[name]}40` : '';
+}
+
+// ── #21 Service Worker 離線支援 ──
+if ('serviceWorker' in navigator) {
+  const swCode = `
+self.addEventListener('fetch', e => {
+  if (e.request.url.includes('github.com')) return;
+  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).then(res => {
+    const clone = res.clone();
+    caches.open('ai-collab-v1').then(c => c.put(e.request, clone));
+    return res;
+  })));
+});`;
+  const blob = new Blob([swCode], {type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+}
+
+// ── #22 側邊欄快捷操作 ──
+function toggleSidebar() {
+  let sb = document.getElementById('sidebar');
+  if (!sb) {
+    sb = document.createElement('div');
+    sb.id = 'sidebar';
+    sb.style.cssText = 'position:fixed;right:0;top:50%;transform:translateY(-50%);background:var(--card);border:1px solid var(--border);border-radius:8px 0 0 8px;padding:8px 4px;display:flex;flex-direction:column;gap:6px;z-index:150';
+    const actions = [
+      {icon:'📋', tip:'任務區', fn:"document.querySelector('.tab').click()"},
+      {icon:'💬', tip:'聊天室', fn:"document.querySelectorAll('.tab')[1].click()"},
+      {icon:'📊', tip:'監察', fn:"document.querySelectorAll('.tab')[2].click()"},
+      {icon:'🔄', tip:'刷新', fn:'reload()'},
+      {icon:'⛶', tip:'全屏', fn:'toggleFullscreen()'},
+    ];
+    actions.forEach(a => {
+      const btn = document.createElement('button');
+      btn.title = a.tip;
+      btn.textContent = a.icon;
+      btn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:1.1rem;padding:4px;border-radius:4px';
+      btn.onclick = () => eval(a.fn);
+      sb.appendChild(btn);
+    });
+    document.body.appendChild(sb);
+  } else { sb.remove(); }
+}
+
+// ── #23 環形圖 ──
+function drawDonut(canvas, pct, color) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const r = canvas.width/2, cx=r, cy=r, radius=r-4;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.beginPath(); ctx.arc(cx,cy,radius,0,Math.PI*2);
+  ctx.strokeStyle='#30363d'; ctx.lineWidth=8; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx,cy,radius,-Math.PI/2,-Math.PI/2+Math.PI*2*pct/100);
+  ctx.strokeStyle=color; ctx.lineWidth=8; ctx.lineCap='round'; ctx.stroke();
+  ctx.fillStyle='#e6edf3'; ctx.font=`bold ${r*0.32}px sans-serif`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(pct+'%',cx,cy);
+}
+
+function renderDonutStats() {
+  const total = allIssues.length;
+  if (!total) return;
+  const done = allIssues.filter(i=>i.state==='closed'||i.labels.some(l=>l.name==='審核中')).length;
+  const inProg = allIssues.filter(i=>i.state==='open'&&i.labels.some(l=>l.name==='進行中')).length;
+  const pct = Math.round(done/total*100);
+  const ipPct = Math.round(inProg/total*100);
+  let wrap = document.getElementById('donut-wrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'donut-wrap';
+    wrap.style.cssText = 'display:flex;gap:24px;padding:16px 24px;border-bottom:1px solid var(--border)';
+    wrap.innerHTML = '<div style="text-align:center"><canvas id="donut-done" width="80" height="80"></canvas><div style="font-size:0.72rem;color:var(--muted);margin-top:4px">已完成</div></div><div style="text-align:center"><canvas id="donut-prog" width="80" height="80"></canvas><div style="font-size:0.72rem;color:var(--muted);margin-top:4px">進行中</div></div>';
+    document.querySelector('.ai-bar').after(wrap);
+  }
+  drawDonut(document.getElementById('donut-done'), pct, '#3fb950');
+  drawDonut(document.getElementById('donut-prog'), ipPct, '#d29922');
+}
+
+// ── #26 系統公告 ──
+function showAnnouncement(msg) {
+  let el = document.getElementById('announcement');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'announcement';
+    el.style.cssText = 'background:rgba(88,166,255,0.1);border:1px solid rgba(88,166,255,0.3);padding:8px 16px;font-size:0.82rem;display:flex;justify-content:space-between;align-items:center';
+    el.innerHTML = `<span id="ann-text"></span><button onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer">✕</button>`;
+    document.querySelector('header').after(el);
+  }
+  document.getElementById('ann-text').textContent = '📢 ' + msg;
+  el.style.display = 'flex';
+}
+
+// ── #27 優先級自動排序（已整合到 filterAndSort）──
+// ── #28 Matrix 背景 ──
+function toggleMatrix() {
+  let canvas = document.getElementById('matrix-canvas');
+  if (canvas) { canvas.remove(); return; }
+  canvas = document.createElement('canvas');
+  canvas.id = 'matrix-canvas';
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;opacity:0.07;pointer-events:none';
+  document.body.prepend(canvas);
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+  const cols = Math.floor(canvas.width/16);
+  const drops = Array(cols).fill(1);
+  setInterval(() => {
+    ctx.fillStyle = 'rgba(13,17,23,0.05)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = '#3fb950'; ctx.font = '14px monospace';
+    drops.forEach((y,i) => {
+      ctx.fillText(String.fromCharCode(0x30A0+Math.random()*96), i*16, y*16);
+      if (y*16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    });
+  }, 50);
+}
+
+// ── #29 任務截止日期（顯示 issue milestone）──
+function getDueDate(issue) {
+  if (issue.milestone?.due_on) {
+    const d = new Date(issue.milestone.due_on);
+    const diff = Math.ceil((d-Date.now())/86400000);
+    if (diff < 0) return `<span style="color:var(--red)">⚠️ 逾期${-diff}天</span>`;
+    if (diff <= 3) return `<span style="color:var(--yellow)">⏰ ${diff}天後截止</span>`;
+    return `<span style="color:var(--muted)">📅 ${d.toLocaleDateString('zh-HK')}</span>`;
+  }
+  return '';
+}
+
+// ── #31 粒子背景 ──
+function toggleParticles() {
+  let canvas = document.getElementById('particle-canvas');
+  if (canvas) { canvas.remove(); return; }
+  canvas = document.createElement('canvas');
+  canvas.id = 'particle-canvas';
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none';
+  document.body.prepend(canvas);
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+  const particles = Array.from({length:60}, ()=>({
+    x:Math.random()*canvas.width, y:Math.random()*canvas.height,
+    vx:(Math.random()-0.5)*0.5, vy:(Math.random()-0.5)*0.5,
+    r:Math.random()*2+1, a:Math.random()
+  }));
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p => {
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(88,166,255,${p.a*0.3})`; ctx.fill();
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0||p.x>canvas.width) p.vx*=-1;
+      if(p.y<0||p.y>canvas.height) p.vy*=-1;
+    });
+    // 連線
+    particles.forEach((a,i)=>particles.slice(i+1).forEach(b=>{
+      const d=Math.hypot(a.x-b.x,a.y-b.y);
+      if(d<100){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle=`rgba(88,166,255,${(1-d/100)*0.1})`;ctx.stroke();}
+    }));
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// ── #32 夜間模式自動切換 ──
+function autoNightMode() {
+  const h = new Date().getHours();
+  if (h >= 22 || h < 7) {
+    document.body.style.filter = 'brightness(0.8) sepia(0.1)';
+    showAnnouncement('夜間模式已自動開啟 🌙');
+  }
+}
+autoNightMode();
+
+// ── 整合：reload 時更新所有新功能 ──
+const _origReload = reload;
+async function reload() {
+  await _origReload();
+  updateProgressBar();
+  renderDonutStats();
+  if (currentView==='kanban') renderKanban();
 }
 
 </script>
