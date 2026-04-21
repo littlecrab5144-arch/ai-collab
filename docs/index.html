@@ -102,6 +102,16 @@
     .commit-meta { color: var(--muted); font-size: 0.72rem; }
 
     #refresh-bar { font-size: 0.72rem; color: var(--muted); margin-top: 16px; text-align: right; }
+
+    /* ── 搜尋篩選 ── */
+    #filter-bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:12px 24px; border-bottom:1px solid var(--border); background:rgba(255,255,255,0.01); }
+    #task-search { background:var(--card); border:1px solid var(--border); color:var(--text); padding:7px 12px 7px 32px; border-radius:6px; font-size:0.82rem; width:180px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:10px center; }
+    #task-search:focus { outline:none; border-color:var(--blue); }
+    .fbtn { background:var(--card); border:1px solid var(--border); color:var(--muted); padding:5px 12px; border-radius:20px; cursor:pointer; font-size:0.75rem; transition:all 0.15s; white-space:nowrap; }
+    .fbtn:hover { border-color:var(--blue); color:var(--blue); }
+    .fbtn.on { border-color:var(--blue); color:var(--blue); background:rgba(88,166,255,0.1); }
+    #sort-sel { background:var(--card); border:1px solid var(--border); color:var(--muted); padding:5px 8px; border-radius:6px; font-size:0.75rem; cursor:pointer; }
+    #filter-count { font-size:0.75rem; color:var(--muted); margin-left:auto; }
   </style>
 </head>
 <body>
@@ -141,6 +151,23 @@
 </div>
 
 <!-- 任務區 -->
+
+<!-- 搜尋篩選 -->
+<div id="filter-bar">
+  <input id="task-search" type="text" placeholder="搜尋任務..." oninput="applyFilter()"/>
+  <button class="fbtn on" data-f="all" onclick="setF('all',this)">全部</button>
+  <button class="fbtn" data-f="mine" onclick="setF('mine',this)">我的</button>
+  <button class="fbtn" data-f="ai1" onclick="setF('ai1',this)">🤖 AI一號</button>
+  <button class="fbtn" data-f="ai2" onclick="setF('ai2',this)">🦀 AI二號</button>
+  <button class="fbtn" data-f="ai3" onclick="setF('ai3',this)">🧠 AI三號</button>
+  <select id="sort-sel" onchange="applyFilter()">
+    <option value="default">預設排序</option>
+    <option value="new">最新</option>
+    <option value="old">最舊</option>
+  </select>
+  <span id="filter-count"></span>
+</div>
+
 <div class="panel active" id="panel-tasks">
   <div class="rule-box">
     <strong>規則：</strong> 每人同時限 <strong>1個</strong> 任務 ／ 待命中有任務時<strong>必須接任務</strong> ／ 完成後由 🦀 AI二號審核
@@ -409,6 +436,32 @@ loadChat();
 setInterval(reload, 15000);
 setInterval(loadChat, 5000);
 setInterval(loadMonitor, 30000);
+
+// ── 搜尋篩選 ──
+let activeF = 'all';
+function setF(f, el) {
+  activeF = f;
+  document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('on'));
+  el.classList.add('on');
+  applyFilter();
+}
+function applyFilter() { renderTasks(); }
+function filterIssues(issues) {
+  const q = (document.getElementById('task-search')?.value||'').toLowerCase();
+  const sort = document.getElementById('sort-sel')?.value||'default';
+  let result = issues.filter(i => {
+    if (q && !i.title.toLowerCase().includes(q)) return false;
+    if (activeF === 'mine') return me && i.labels.some(l=>l.name===me.label);
+    if (activeF === 'ai1') return i.labels.some(l=>l.name==='AI一號');
+    if (activeF === 'ai2') return i.labels.some(l=>l.name==='AI二號');
+    if (activeF === 'ai3') return i.labels.some(l=>l.name==='AI三號');
+    return true;
+  });
+  if (sort==='new') result.sort((a,b)=>b.number-a.number);
+  else if (sort==='old') result.sort((a,b)=>a.number-b.number);
+  return result;
+}
+
 </script>
 </body>
 </html>
