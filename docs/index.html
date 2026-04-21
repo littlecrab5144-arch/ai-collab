@@ -102,9 +102,74 @@
     .commit-meta { color: var(--muted); font-size: 0.72rem; }
 
     #refresh-bar { font-size: 0.72rem; color: var(--muted); margin-top: 16px; text-align: right; }
+
+    /* ── 動畫升級 ── */
+
+    /* 頁面載入淡入 */
+    @keyframes pageIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    body { animation: pageIn 0.5s ease-out; }
+
+    /* 呼吸燈 - 待命（綠）*/
+    @keyframes breatheGreen {
+      0%,100% { box-shadow: 0 0 0 0 rgba(63,185,80,0); }
+      50% { box-shadow: 0 0 0 6px rgba(63,185,80,0.25); }
+    }
+    /* 呼吸燈 - 忙碌（黃）*/
+    @keyframes breatheYellow {
+      0%,100% { box-shadow: 0 0 0 0 rgba(210,153,34,0); }
+      50% { box-shadow: 0 0 0 6px rgba(210,153,34,0.3); }
+    }
+    .ai-chip.standby { animation: breatheGreen 2.5s ease-in-out infinite; }
+    .ai-chip.busy    { animation: breatheYellow 1.8s ease-in-out infinite; }
+
+    /* 任務卡 hover 滑入 */
+    .task-card { transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }
+    .task-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.4); }
+
+    /* 任務卡出現動畫 */
+    @keyframes cardIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    .task-card { animation: cardIn 0.3s ease-out both; }
+
+    /* 聊天訊息彈出 */
+    @keyframes msgPop {
+      0%   { opacity:0; transform: scale(0.92) translateY(8px); }
+      70%  { transform: scale(1.02) translateY(-1px); }
+      100% { opacity:1; transform: scale(1) translateY(0); }
+    }
+    .msg { animation: msgPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+    /* Tab 切換過渡 */
+    .panel { opacity:0; transition: opacity 0.2s ease; }
+    .panel.active { opacity:1; }
+
+    /* 成功 flash 動畫 */
+    @keyframes successFlash {
+      0%   { background: var(--card); }
+      30%  { background: rgba(63,185,80,0.25); }
+      100% { background: var(--card); }
+    }
+    .task-card.flash { animation: successFlash 0.7s ease-out; }
+
+    /* 按鈕 hover 效果 */
+    .claim-btn, .done-btn { transition: transform 0.15s, opacity 0.15s; }
+    .claim-btn:hover, .done-btn:hover { transform: scale(1.05); }
+    .claim-btn:active, .done-btn:active { transform: scale(0.97); }
+
+    /* Confetti 容器 */
+    #confetti-container { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:9999; overflow:hidden; }
+    .confetti-piece { position:absolute; width:8px; height:8px; border-radius:2px; opacity:0; }
+    @keyframes confettiFall {
+      0%   { transform: translateY(-20px) rotate(0deg); opacity:1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity:0; }
+    }
+
+    /* AI chip 過渡 */
+    .ai-chip { transition: border-color 0.3s ease; }
+    .badge { transition: background 0.3s, color 0.3s; }
   </style>
 </head>
 <body>
+<div id="confetti-container"></div>
 
 <!-- Header + 登入 -->
 <header>
@@ -244,6 +309,7 @@ async function claimTask(num) {
   if (!me) { alert('請先登入'); return; }
   const myActive = allIssues.filter(i => i.state==='open' && i.labels.some(l=>l.name==='進行中') && i.labels.some(l=>l.name===me.label));
   if (myActive.length) { alert('你已有進行中任務！'); return; }
+  flashCard(num);
   await fetch(`${API}/repos/${REPO}/issues/${num}/labels`, { method:'POST', headers:ghHeaders(), body: JSON.stringify({labels:['進行中', me.label]}) });
   await fetch(`${API}/repos/${REPO}/issues/${num}/labels/${encodeURIComponent('任務')}`, { method:'DELETE', headers:ghHeaders() });
   await fetch(`${API}/repos/${REPO}/issues/${num}/comments`, { method:'POST', headers:ghHeaders(), body: JSON.stringify({body:`${me.emoji} **${me.name}** 認領！\n開始：${new Date().toLocaleString('zh-HK')}`}) });
@@ -253,6 +319,8 @@ async function claimTask(num) {
 // ── 任務：完成 ──
 async function doneTask(num) {
   if (!me) return;
+  launchConfetti();
+  flashCard(num);
   await fetch(`${API}/repos/${REPO}/issues/${num}/labels`, { method:'POST', headers:ghHeaders(), body: JSON.stringify({labels:['審核中']}) });
   await fetch(`${API}/repos/${REPO}/issues/${num}/labels/${encodeURIComponent('進行中')}`, { method:'DELETE', headers:ghHeaders() });
   await fetch(`${API}/repos/${REPO}/issues/${num}/labels/${encodeURIComponent(me.label)}`, { method:'DELETE', headers:ghHeaders() });
@@ -396,6 +464,34 @@ async function loadMonitor() {
       </div>`).join('');
     document.getElementById('refresh-bar').textContent = `最後更新：${new Date().toLocaleTimeString('zh-HK')}`;
   } catch(e) {}
+}
+
+// ── 動畫工具 ──
+function flashCard(num) {
+  const cards = document.querySelectorAll('.task-card');
+  cards.forEach(c => { if (c.querySelector('.task-title')) c.classList.remove('flash'); });
+  setTimeout(() => {
+    document.querySelectorAll('.task-card').forEach(c => { c.classList.add('flash'); setTimeout(()=>c.classList.remove('flash'),700); });
+  }, 50);
+}
+
+function launchConfetti() {
+  const container = document.getElementById('confetti-container');
+  const colors = ['#3fb950','#58a6ff','#bc8cff','#d29922','#f85149','#ff9500'];
+  for (let i=0; i<60; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.cssText = [
+      `left:${Math.random()*100}%`,
+      `background:${colors[Math.floor(Math.random()*colors.length)]}`,
+      `animation: confettiFall ${1.2+Math.random()*1.5}s ${Math.random()*0.5}s ease-in forwards`,
+      `width:${6+Math.random()*8}px`,
+      `height:${6+Math.random()*8}px`,
+      `border-radius:${Math.random()>0.5?'50%':'2px'}`
+    ].join(';');
+    container.appendChild(el);
+    setTimeout(()=>el.remove(), 2500);
+  }
 }
 
 // ── 主循環 ──
