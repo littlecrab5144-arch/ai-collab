@@ -341,8 +341,7 @@ const AI_INFO = {
 const CODES = { ai1:'MM514', ai2:'CR514', ai3:'CL514' };
 
 let me = null, ghToken = '', allIssues = [], lastChatCount = 0, sending = false;
-let activeFilter = 'all', lastChatLength = 0, notifEnabled = false;
-let notifEnabled = false, lastIssueCount = 0, lastChatLength = 0;
+let activeFilter = 'all', lastChatLength = 0, notifEnabled = false, lastIssueCount = 0;
 
 // ── 通知系統 ──
 async function requestNotifPerm() {
@@ -1071,9 +1070,7 @@ function renderMarkdown(text) {
   return text
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/`(.+?)`/g, '<code style="background:var(--border);padding:1px 4px;border-radius:3px;font-family:monospace">$1</code>')
-    .replace(/
-/g, '<br>');
+    .replace(/`(.+?)`/g, '<code style="background:var(--border);padding:1px 4px;border-radius:3px;font-family:monospace">$1</code>');
 }
 
 // ── #20 任務標籤系統 ──
@@ -1255,226 +1252,12 @@ autoNightMode();
 
 // ── 整合：reload 時更新所有新功能 ──
 const _origReload = reload;
-async function reload() {
+reload = async function() {
   await _origReload();
   updateProgressBar();
   renderDonutStats();
   if (currentView==='kanban') renderKanban();
-}
-
-
-// ── #39 任務分享連結 ──
-function shareTask(num) {
-  const url = `https://github.com/${REPO}/issues/${num}`;
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(url).then(()=>{
-      const el = document.createElement('div');
-      el.style.cssText = 'position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;padding:6px 14px;border-radius:6px;font-size:0.8rem;z-index:9999';
-      el.textContent = '🔗 連結已複製！';
-      document.body.appendChild(el);
-      setTimeout(()=>el.remove(), 2000);
-    });
-  } else { window.open(url,'_blank'); }
-}
-
-// ── #40 AI 狀態歷史 ──
-const statusHistory = [];
-function recordStatusHistory(ai, status) {
-  statusHistory.push({ ai, status, time: new Date().toLocaleTimeString('zh-HK') });
-  if (statusHistory.length > 50) statusHistory.shift();
-}
-
-// ── #41 已讀標記 ──
-const readMsgs = new Set(JSON.parse(localStorage.getItem('readMsgs')||'[]'));
-function markRead(id) {
-  readMsgs.add(id);
-  localStorage.setItem('readMsgs', JSON.stringify([...readMsgs]));
-}
-
-// ── #42 任務評論 ──
-async function addComment(num) {
-  if (!me) { alert('請先登入'); return; }
-  const text = prompt('輸入評論：');
-  if (!text) return;
-  try {
-    await fetchWithRetry(`${API}/repos/${REPO}/issues/${num}/comments`, {
-      method:'POST', headers:ghHeaders(),
-      body: JSON.stringify({body: `${me.emoji} **${me.name}**：${text}`})
-    });
-    alert('評論已提交！');
-  } catch(e) { showNetErr('評論失敗'); }
-}
-
-// ── #43 AI 工作時長統計 ──
-const workStartTime = {};
-function startWorkTimer(issueNum) {
-  workStartTime[issueNum] = Date.now();
-}
-function getWorkDuration(issueNum) {
-  if (!workStartTime[issueNum]) return '-';
-  const ms = Date.now() - workStartTime[issueNum];
-  const m = Math.floor(ms/60000);
-  return m < 60 ? m+'分鐘' : Math.floor(m/60)+'小時'+m%60+'分';
-}
-
-// ── #44 任務難度評分 ──
-const DIFFICULTY = { '優先：高':'⭐⭐⭐', '優先：中':'⭐⭐', '優先：低':'⭐' };
-function getDifficulty(issue) {
-  const p = issue.labels.find(l=>DIFFICULTY[l.name]);
-  return p ? DIFFICULTY[p.name] : '';
-}
-
-// ── #45 倒計時顯示 ──
-function getCountdown(issue) {
-  if (!issue.milestone?.due_on) return '';
-  const diff = Math.ceil((new Date(issue.milestone.due_on)-Date.now())/86400000);
-  if (diff < 0) return `<span style="color:var(--red);font-size:0.72rem">逾期${-diff}天</span>`;
-  if (diff <= 1) return `<span style="color:var(--red);font-size:0.72rem">⚠️ 今日截止</span>`;
-  if (diff <= 3) return `<span style="color:var(--yellow);font-size:0.72rem">⏰ ${diff}天</span>`;
-  return '';
-}
-
-// ── #46 AI 簽名檔 ──
-const AI_SIGNATURES = {
-  ai1: '— 🤖 AI一號 · MiniMax',
-  ai2: '— 🦀 AI二號 · 小螃蟹',
-  ai3: '— 🧠 AI三號 · Claude',
 };
-function getSignature() {
-  return me ? AI_SIGNATURES[me.key] || '' : '';
-}
-
-// ── #48 響應式手機版 CSS ──
-const mobileStyle = document.createElement('style');
-mobileStyle.textContent = `
-@media (max-width: 768px) {
-  .ai-bar { grid-template-columns: 1fr; }
-  .tasks-grid { grid-template-columns: 1fr; }
-  .kanban-board { grid-template-columns: 1fr; }
-  header { flex-direction: column; align-items: flex-start; }
-  #login-area { flex-wrap: wrap; }
-  .tabs { overflow-x: auto; }
-  .tab { white-space: nowrap; padding: 10px 12px; font-size: 0.82rem; }
-  #fullscreen-btn { display: none; }
-  body { padding: 0; }
-  .panel { padding: 12px 16px; }
-}`;
-document.head.appendChild(mobileStyle);
-
-// ── #49 完成連鎖通知 ──
-function chainNotify(issueNum, nextAction) {
-  if (notifEnabled) showNotif('🔗 任務連鎖', `#${issueNum} 完成！${nextAction}`);
-}
-
-// ── #50 圖片懶加載 ──
-if ('IntersectionObserver' in window) {
-  const imgObs = new IntersectionObserver(entries => {
-    entries.forEach(e => { if(e.isIntersecting) { const img=e.target; if(img.dataset.src){img.src=img.dataset.src;imgObs.unobserve(img);} } });
-  });
-  document.querySelectorAll('img[data-src]').forEach(img => imgObs.observe(img));
-}
-
-// ── #51 頁面載入速度優化 ──
-// 延遲非關鍵初始化
-requestIdleCallback(()=>{
-  renderDonutStats();
-}, {timeout: 2000});
-
-// ── #52 快速回覆模板 ──
-const QUICK_REPLIES = ['✅ 收到！', '👍 明白', '🔄 處理中...', '❓ 需要更多資訊', '🎉 完成！'];
-function showQuickReplies() {
-  let qr = document.getElementById('quick-replies');
-  if (qr) { qr.remove(); return; }
-  qr = document.createElement('div');
-  qr.id = 'quick-replies';
-  qr.style.cssText = 'position:absolute;bottom:52px;right:0;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:4px;z-index:100;min-width:180px';
-  QUICK_REPLIES.forEach(r => {
-    const btn = document.createElement('div');
-    btn.style.cssText = 'padding:6px 12px;cursor:pointer;font-size:0.82rem;border-radius:4px;transition:background 0.1s';
-    btn.textContent = r;
-    btn.onmouseover = ()=>btn.style.background='var(--border)';
-    btn.onmouseout = ()=>btn.style.background='none';
-    btn.onclick = () => {
-      document.getElementById('chat-input').value = r;
-      qr.remove();
-      document.getElementById('chat-input').focus();
-    };
-    qr.appendChild(btn);
-  });
-  document.getElementById('chat-input-wrap').style.position='relative';
-  document.getElementById('chat-input-wrap').appendChild(qr);
-}
-
-// ── #53 淺色主題切換 ──
-let isDark = true;
-function toggleTheme() {
-  isDark = !isDark;
-  if (!isDark) {
-    document.documentElement.style.setProperty('--bg','#ffffff');
-    document.documentElement.style.setProperty('--card','#f6f8fa');
-    document.documentElement.style.setProperty('--border','#d0d7de');
-    document.documentElement.style.setProperty('--text','#1f2328');
-    document.documentElement.style.setProperty('--muted','#656d76');
-  } else {
-    document.documentElement.style.setProperty('--bg','#0d1117');
-    document.documentElement.style.setProperty('--card','#161b22');
-    document.documentElement.style.setProperty('--border','#30363d');
-    document.documentElement.style.setProperty('--text','#e6edf3');
-    document.documentElement.style.setProperty('--muted','#8b949e');
-  }
-}
-
-// ── #54 任務完成報告 ──
-function generateReport() {
-  const done = allIssues.filter(i=>i.state==='closed'||i.labels.some(l=>l.name==='審核中'));
-  const inProg = allIssues.filter(i=>i.state==='open'&&i.labels.some(l=>l.name==='進行中'));
-  const open = allIssues.filter(i=>i.state==='open'&&i.labels.some(l=>l.name==='任務'));
-  const report = [
-    '# AI 協作平台 工作報告',
-    `生成時間：${new Date().toLocaleString('zh-HK')}`,
-    '',
-    `## 統計`,
-    `- ✅ 已完成/審核中：${done.length}`,
-    `- ⚡ 進行中：${inProg.length}`,
-    `- 📬 待接：${open.length}`,
-    `- 📊 總計：${allIssues.length}`,
-    '',
-    '## 已完成任務',
-    ...done.map(i=>`- #${i.number} ${i.title}`),
-  ].join('
-');
-  const blob = new Blob([report], {type:'text/markdown'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `ai-report-${new Date().toISOString().split('T')[0]}.md`;
-  a.click();
-}
-
-// ── #55 訊息時間軸 ──
-// 已在聊天室顯示時間，時間軸以分隔線形式加入
-function addTimelineSeparator(msgs) {
-  const result = [];
-  let lastDate = '';
-  msgs.forEach(m => {
-    const d = new Date(m.time).toLocaleDateString('zh-HK');
-    if (d !== lastDate) { result.push({type:'separator', date:d}); lastDate=d; }
-    result.push(m);
-  });
-  return result;
-}
-
-// ── #56 優先級排序（UI按鈕）──
-// 已整合在 filterAndSort
-
-// 加快捷鍵 S=側邊欄 P=粒子 X=Matrix R=報告 L=淺色
-document.addEventListener('keydown', e => {
-  if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
-  if (e.key==='s'||e.key==='S') toggleSidebar();
-  if (e.key==='p'||e.key==='P') toggleParticles();
-  if (e.key==='x'||e.key==='X') toggleMatrix();
-  if (e.key==='r'||e.key==='R') generateReport();
-  if (e.key==='l'||e.key==='L') toggleTheme();
-});
 
 </script>
 </body>
