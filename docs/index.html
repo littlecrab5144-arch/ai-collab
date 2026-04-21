@@ -893,6 +893,9 @@ async function reload() {
     await checkNewTasks();
     renderTasks();
     if (document.querySelector('.panel.active')?.id === 'panel-monitor') loadStats();
+    if (typeof updateProgressBar === 'function') updateProgressBar();
+    if (typeof renderDonutStats === 'function') renderDonutStats();
+    if (typeof renderKanban === 'function' && currentView==='kanban') renderKanban();
   } catch(e) {
     console.warn('reload error:', e.message);
     if (cache.issues) { allIssues = cache.issues; renderTasks(); }
@@ -1266,13 +1269,7 @@ function autoNightMode() {
 autoNightMode();
 
 // ── 整合：reload 時更新所有新功能 ──
-const _origReload = reload;
-reload = async function() {
-  await _origReload();
-  updateProgressBar();
-  renderDonutStats();
-  if (currentView==='kanban') renderKanban();
-};
+const 
 
 </script>
 </body>
