@@ -382,13 +382,70 @@ function doLogout() {
 function ghHeaders() {
   return ghToken ? { 'Authorization': `Bearer ${ghToken}`, 'Content-Type': 'application/json' } : {};
 }
+
+// 離線緩存
+const cache = { issues: null, commits: null, chatCount: 0 };
+
+// 顯示/隱藏錯誤提示
+function showNetErr(msg) {
+  let el = document.getElementById('net-err-bar');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'net-err-bar';
+    el.style.cssText = 'position:fixed;top:0;left:0;right:0;background:rgba(248,81,73,0.92);color:#fff;font-size:0.8rem;padding:6px 16px;z-index:9998;display:flex;align-items:center;justify-content:space-between;';
+    el.innerHTML = `<span id="net-err-msg"></span><button onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:#fff;cursor:pointer;font-size:1rem">✕</button>`;
+    document.body.prepend(el);
+  }
+  el.style.display = 'flex';
+  document.getElementById('net-err-msg').textContent = msg;
+}
+function hideNetErr() {
+  const el = document.getElementById('net-err-bar');
+  if (el) el.style.display = 'none';
+}
+
+// 帶重試嘅 fetch（最多重試3次）
+async function fetchWithRetry(url, opts={}, retries=3) {
+  for (let i=0; i<retries; i++) {
+    try {
+      const r = await fetch(url, opts);
+      if (r.status === 403) { showNetErr('⚠️ GitHub API 限額已用盡，請稍後再試'); throw new Error('rate_limit'); }
+      if (r.status === 401) { showNetErr('⚠️ Token 無效或已過期，請重新登入'); throw new Error('unauthorized'); }
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      hideNetErr();
+      return r;
+    } catch(e) {
+      if (e.message === 'rate_limit' || e.message === 'unauthorized') throw e;
+      if (i < retries-1) {
+        showNetErr(`⚠️ 網絡錯誤，${2*(i+1)}秒後重試... (${i+1}/${retries})`);
+        await new Promise(r => setTimeout(r, 2000*(i+1)));
+      } else {
+        showNetErr(`⚠️ 連線失敗，顯示緩存數據`);
+        throw e;
+      }
+    }
+  }
+}
+
 async function fetchIssues() {
-  const r = await fetch(`${API}/repos/${REPO}/issues?state=all&per_page=50`, { headers: ghHeaders() });
-  return await r.json();
+  try {
+    const r = await fetchWithRetry(`${API}/repos/${REPO}/issues?state=all&per_page=50`, { headers: ghHeaders() });
+    cache.issues = await r.json();
+    return cache.issues;
+  } catch(e) {
+    if (cache.issues) { showNetErr('⚠️ 離線模式：顯示緩存任務數據'); return cache.issues; }
+    return [];
+  }
 }
 async function fetchCommits() {
-  const r = await fetch(`${API}/repos/${REPO}/commits?per_page=30`, { headers: ghHeaders() });
-  return await r.json();
+  try {
+    const r = await fetchWithRetry(`${API}/repos/${REPO}/commits?per_page=30`, { headers: ghHeaders() });
+    cache.commits = await r.json();
+    return cache.commits;
+  } catch(e) {
+    if (cache.commits) return cache.commits;
+    return [];
+  }
 }
 
 // ── 任務：接 ──
@@ -396,20 +453,27 @@ async function claimTask(num) {
   if (!me) { alert('請先登入'); return; }
   const myActive = allIssues.filter(i => i.state==='open' && i.labels.some(l=>l.name==='進行中') && i.labels.some(l=>l.name===me.label));
   if (myActive.length) { alert('你已有進行中任務！'); return; }
-  await fetch(`${API}/repos/${REPO}/issues/${num}/labels`, { method:'POST', headers:ghHeaders(), body: JSON.stringify({labels:['進行中', me.label]}) });
-  await fetch(`${API}/repos/${REPO}/issues/${num}/labels/${encodeURIComponent('任務')}`, { method:'DELETE', headers:ghHeaders() });
-  await fetch(`${API}/repos/${REPO}/issues/${num}/comments`, { method:'POST', headers:ghHeaders(), body: JSON.stringify({body:`${me.emoji} **${me.name}** 認領！\n開始：${new Date().toLocaleString('zh-HK')}`}) });
-  await reload();
+  flashCard(num);
+  try {
+    await fetchWithRetry(`${API}/repos/${REPO}/issues/${num}/labels`, { method:'POST', headers:ghHeaders(), body: JSON.stringify({labels:['進行中', me.label]}) });
+    await fetchWithRetry(`${API}/repos/${REPO}/issues/${num}/labels/${encodeURIComponent('任務')}`, { method:'DELETE', headers:ghHeaders() });
+    await fetchWithRetry(`${API}/repos/${REPO}/issues/${num}/comments`, { method:'POST', headers:ghHeaders(), body: JSON.stringify({body:`${me.emoji} **${me.name}** 認領！\n開始：${new Date().toLocaleString('zh-HK')}`}) });
+    await reload();
+  } catch(e) { showNetErr('認領失敗，請再試'); }
 }
 
 // ── 任務：完成 ──
 async function doneTask(num) {
   if (!me) return;
-  await fetch(`${API}/repos/${REPO}/issues/${num}/labels`, { method:'POST', headers:ghHeaders(), body: JSON.stringify({labels:['審核中']}) });
-  await fetch(`${API}/repos/${REPO}/issues/${num}/labels/${encodeURIComponent('進行中')}`, { method:'DELETE', headers:ghHeaders() });
-  await fetch(`${API}/repos/${REPO}/issues/${num}/labels/${encodeURIComponent(me.label)}`, { method:'DELETE', headers:ghHeaders() });
-  await fetch(`${API}/repos/${REPO}/issues/${num}/comments`, { method:'POST', headers:ghHeaders(), body: JSON.stringify({body:`${me.emoji} **${me.name}** 完成！等待 🦀 AI二號審核\n${new Date().toLocaleString('zh-HK')}`}) });
-  await reload();
+  launchConfetti();
+  flashCard(num);
+  try {
+    await fetchWithRetry(`${API}/repos/${REPO}/issues/${num}/labels`, { method:'POST', headers:ghHeaders(), body: JSON.stringify({labels:['審核中']}) });
+    await fetchWithRetry(`${API}/repos/${REPO}/issues/${num}/labels/${encodeURIComponent('進行中')}`, { method:'DELETE', headers:ghHeaders() });
+    await fetchWithRetry(`${API}/repos/${REPO}/issues/${num}/labels/${encodeURIComponent(me.label)}`, { method:'DELETE', headers:ghHeaders() });
+    await fetchWithRetry(`${API}/repos/${REPO}/issues/${num}/comments`, { method:'POST', headers:ghHeaders(), body: JSON.stringify({body:`${me.emoji} **${me.name}** 完成！等待 🦀 AI二號審核\n${new Date().toLocaleString('zh-HK')}`}) });
+    await reload();
+  } catch(e) { showNetErr('更新失敗，請再試'); }
 }
 
 // ── 優先級 ──
@@ -547,6 +611,7 @@ async function loadStats() {
 async function loadChat() {
   try {
     const r = await fetch(RAW + '?t=' + Date.now());
+    if (!r.ok) throw new Error('HTTP ' + r.status);
     const data = await r.json();
     const msgs = data.messages || [];
 
@@ -560,9 +625,11 @@ async function loadChat() {
       });
     }
     lastChatLength = msgs.length;
-
     if (msgs.length !== lastChatCount) { renderChat(msgs); lastChatCount = msgs.length; }
-  } catch(e) {}
+  } catch(e) {
+    console.warn('聊天室載入失敗:', e.message);
+    // 離線靜默，唔打擾用家
+  }
 }
 function renderChat(msgs) {
   const c = document.getElementById('messages');
@@ -632,10 +699,15 @@ async function checkNewTasks() {
 
 // ── 主循環 ──
 async function reload() {
-  allIssues = await fetchIssues();
-  await checkNewTasks();
-  renderTasks();
-  if (document.querySelector('.panel.active')?.id === 'panel-monitor') loadStats();
+  try {
+    allIssues = await fetchIssues();
+    await checkNewTasks();
+    renderTasks();
+    if (document.querySelector('.panel.active')?.id === 'panel-monitor') loadStats();
+  } catch(e) {
+    console.warn('reload error:', e.message);
+    if (cache.issues) { allIssues = cache.issues; renderTasks(); }
+  }
 }
 
 reload();
