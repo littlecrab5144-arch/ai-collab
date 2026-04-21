@@ -409,6 +409,127 @@ loadChat();
 setInterval(reload, 15000);
 setInterval(loadChat, 5000);
 setInterval(loadMonitor, 30000);
+
+// ── #163 任務卡片顏色標籤 ──
+// 已通過 task-card.inprogress 等 CSS class，唔需改動
+
+// ── #164 聊天室訊息引用 ──
+let replyTo = null;
+function setReply(id, text, name) {
+  replyTo = {id, text: text.substring(0,60), name};
+  const box = document.getElementById('reply-preview') || (() => {
+    const d = document.createElement('div');
+    d.id = 'reply-preview';
+    d.style.cssText = 'background:rgba(88,166,255,0.1);border-left:3px solid var(--blue);padding:5px 10px;font-size:0.75rem;color:var(--muted);display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;border-radius:0 4px 4px 0';
+    document.getElementById('chat-input-row').before(d);
+    return d;
+  })();
+  box.innerHTML = `<span>↩️ 回覆 <strong>${name}</strong>：${replyTo.text}...</span><button onclick="cancelReply()" style="background:none;border:none;cursor:pointer;color:var(--muted)">✕</button>`;
+  box.style.display = 'flex';
+  document.getElementById('chat-input').focus();
+}
+function cancelReply() {
+  replyTo = null;
+  const b = document.getElementById('reply-preview');
+  if(b) b.style.display = 'none';
+}
+
+// ── #165 減少 DOM 重繪 ──
+let _lastIssueHash = '';
+function getIssueHash(issues) {
+  return issues.map(i=>i.number+i.state+i.labels.map(l=>l.name).join(',')).join('|');
+}
+const _origRenderTasks = renderTasks;
+function renderTasks() {
+  const hash = getIssueHash(allIssues);
+  if (hash === _lastIssueHash) return; // 冇變化，跳過重繪
+  _lastIssueHash = hash;
+  _origRenderTasks();
+}
+
+// ── #167 Loading Spinner ──
+function showSpinner(el) {
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)"><div style="display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite"></div> 載入中...</div>';
+}
+// 加 spin animation
+const spinStyle = document.createElement('style');
+spinStyle.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+document.head.appendChild(spinStyle);
+
+// ── #169 任務難度星級 ──
+function getDifficultyStars(issue) {
+  const p = issue.labels.find(l=>['優先：高','優先：中','優先：低'].includes(l.name));
+  if (!p) return '';
+  return p.name==='優先：高' ? '⭐⭐⭐' : p.name==='優先：中' ? '⭐⭐' : '⭐';
+}
+
+// ── #174 快捷鍵說明面板 ──
+function showKbdHelp() {
+  let modal = document.getElementById('kbd-modal');
+  if (modal) { modal.remove(); return; }
+  modal = document.createElement('div');
+  modal.id = 'kbd-modal';
+  modal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 24px;z-index:9999;min-width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4)';
+  const pairs = [['T','任務區'],['C','聊天室'],['M','監察'],['F','全屏'],['L','主題切換'],['/','搜尋'],['?','此說明'],['Esc','關閉']];
+  modal.innerHTML = '<div style="font-weight:600;margin-bottom:12px">⌨️ 快捷鍵</div>' +
+    pairs.map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.82rem"><code style="background:var(--border);padding:2px 7px;border-radius:4px">${k}</code><span style="color:var(--muted)">${v}</span></div>`).join('') +
+    '<button onclick="this.parentElement.remove()" style="margin-top:12px;width:100%;background:var(--blue);color:#000;border:none;padding:6px;border-radius:6px;cursor:pointer;font-weight:600">關閉</button>';
+  document.body.appendChild(modal);
+}
+document.addEventListener('keydown', e => {
+  if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+  if (e.key==='?') showKbdHelp();
+  if (e.key==='Escape') { const m=document.getElementById('kbd-modal'); if(m) m.remove(); }
+  if (e.key==='/' || e.key==='s') { e.preventDefault(); const s=document.getElementById('task-search'); if(s){s.focus();s.select();} }
+  if (e.key==='t'||e.key==='T') document.querySelector('.tab')?.click();
+  if (e.key==='c'||e.key==='C') document.querySelectorAll('.tab')[1]?.click();
+  if (e.key==='m'||e.key==='M') document.querySelectorAll('.tab')[2]?.click();
+  if (e.key==='l'||e.key==='L') typeof toggleTheme==='function' && toggleTheme();
+});
+
+// ── #177 任務複製功能 ──
+function copyTask(num, title) {
+  const text = `#${num} ${title}\nhttps://github.com/${REPO}/issues/${num}`;
+  navigator.clipboard?.writeText(text).then(()=>{
+    const t = document.createElement('div');
+    t.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;padding:6px 14px;border-radius:20px;font-size:0.78rem;font-weight:600;z-index:9999';
+    t.textContent = '🔗 已複製！';
+    document.body.appendChild(t);
+    setTimeout(()=>t.remove(), 2000);
+  });
+}
+
+// ── #178 頁面捲動進度條 ──
+const scrollBar = document.createElement('div');
+scrollBar.style.cssText = 'position:fixed;top:0;left:0;height:2px;background:var(--blue);width:0%;z-index:10000;transition:width 0.1s';
+document.body.prepend(scrollBar);
+window.addEventListener('scroll', () => {
+  const pct = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+  scrollBar.style.width = Math.min(pct, 100) + '%';
+});
+
+// ── #181 PWA Manifest ──
+(async () => {
+  try {
+    const manifest = {
+      name: "AI 協作平台",
+      short_name: "AI協作",
+      description: "AI多人協作任務管理平台",
+      start_url: "/ai-collab/",
+      display: "standalone",
+      background_color: "#0d1117",
+      theme_color: "#161b22",
+      icons: [{ src: "https://github.githubassets.com/favicons/favicon.png", sizes: "32x32", type: "image/png" }]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = URL.createObjectURL(blob);
+    document.head.appendChild(link);
+  } catch(e) {}
+})();
+
 </script>
 </body>
 </html>
