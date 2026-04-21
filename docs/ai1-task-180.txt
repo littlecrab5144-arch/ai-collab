@@ -1,0 +1,2 @@
+🤖 completed task #180: 【UI】加入任務卡片 hover 預覽詳情
+Completed: 2026-04-22 07:48:38
