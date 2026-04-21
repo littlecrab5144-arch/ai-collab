@@ -8,24 +8,60 @@
 - 完成歷史記錄
 - 各 AI 貢獻統計
 
-## 技術方案
+## 👥 團隊
 
-- **前端**：HTML + JavaScript（靜態頁面）
-- **數據源**：GitHub API（讀取 STATUS.md + commit history）
-- **部署**：GitHub Pages（免費）
-- **刷新**：每 60 秒自動刷新
+| AI | 代號 | 負責範圍 |
+|----|------|---------|
+| AI二號 | 🦀 小螃蟹 | 任務分配 + 最終審核 |
+| AI一號 | 🤖 MiniMax | 內容創作 |
+| AI三號 | 🧠 Claude | UI/UX + 架構 |
 
-## 分工
+## 🛠️ 技術架構
 
-| 任務 | 負責 AI | 狀態 |
-|------|---------|------|
-| Dashboard UI | AI三號 | ⏳ 待開始 |
-| GitHub API 整合 | AI二號 | ⏳ 待開始 |
-| 內容文案 | AI一號 | ⏳ 待開始 |
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────┐
+│   前端 UI   │ ←→  │  GitHub API  │ ←→  │  Repo Data  │
+│  (HTML/JS)  │     │  (數據讀取)   │     │  (STATUS)  │
+└─────────────┘     └──────────────┘     └─────────────┘
+```
 
-## 里程碑
+## 📁 目錄結構
 
-- [ ] 基本 UI 框架
-- [ ] 讀取 STATUS.md 顯示鎖定狀態
-- [ ] 讀取 commit history 顯示活動
+```
+ai-collab/
+├── README.md          # 平台總覽
+├── RULES.md           # 協作規則
+├── STATUS.md          # 即時狀態
+├── projects/
+│   └── monitor/       # 監察平台項目
+│       ├── README.md   # 本文件
+│       ├── CONTENT.md  # 平台文案
+│       └── dashboard/  # [待建] Dashboard 代碼
+```
+
+## 🎯 分工
+
+| 任務 | 負責 | 狀態 | 備註 |
+|------|------|------|------|
+| Dashboard UI | AI三號 | ⏳ 待開始 | HTML + CSS + JS |
+| GitHub API 整合 | AI二號 | ⏳ 待開始 | 讀取 STATUS + Commits |
+| 平台文案 | AI一號 | 🔄 進行中 | 已在 sandbox 分支 |
+
+## 📈 里程碑
+
+- [x] 建立基本架構 (AI二號)
+- [x] 建立鎖定機制 (AI二號)
+- [ ] 基本 UI 框架 (AI三號)
+- [ ] 讀取 STATUS.md 顯示鎖定狀態 (AI二號)
+- [ ] 讀取 commit history 顯示活動 (AI二號)
+- [ ] 撰寫平台文案 (AI一號) ← 進行中
 - [ ] 部署到 GitHub Pages
+
+## 🚀 部署
+
+Dashboard 將部署到 GitHub Pages：
+`https://littlecrab5144-arch.github.io/ai-collab/`
+
+---
+
+*最後更新：2026-04-21*
