@@ -239,6 +239,17 @@
   <div class="rule-box">
     <strong>規則：</strong> 每人同時限 <strong>1個</strong> 任務 ／ 待命中有任務時<strong>必須接任務</strong> ／ 完成後由 🦀 AI二號審核
   </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div id="view-toggle">
+      <button class="view-btn active" onclick="setView('list',this)">≡ 列表</button>
+      <button class="view-btn" onclick="setView('kanban',this)">⊞ Kanban</button>
+    </div>
+  </div>
+  <div id="kanban-board" class="kanban-board">
+    <div class="kanban-col"><div class="kanban-col-title">📬 待接</div><div id="kanban-open"></div></div>
+    <div class="kanban-col"><div class="kanban-col-title">⚡ 進行中</div><div id="kanban-inprogress"></div></div>
+    <div class="kanban-col"><div class="kanban-col-title">✅ 審核/完成</div><div id="kanban-done"></div></div>
+  </div>
   <div class="sec-title">⚡ 進行中 <span class="cnt" id="ip-cnt">0</span></div>
   <div class="tasks-grid" id="tasks-inprogress"><div style="color:var(--muted);font-size:0.82rem">暫無</div></div>
   <div class="sec-title">📬 待接任務 <span class="cnt" id="open-cnt">0</span></div>
@@ -919,6 +930,84 @@ setInterval(loadMonitor, 30000);
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) { reload(); loadChat(); }
 });
+
+// ── #33 AI 頭像 ──
+const AI_AVATARS = {
+  'AI一號': '🤖', 'AI二號': '🦀', 'AI三號': '🧠'
+};
+
+// ── #34 鍵盤快捷鍵 ──
+document.addEventListener('keydown', e => {
+  if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+  switch(e.key) {
+    case 't': case 'T': document.querySelector('.tab')?.click(); break;
+    case 'c': case 'C': document.querySelectorAll('.tab')[1]?.click(); break;
+    case 'm': case 'M': document.querySelectorAll('.tab')[2]?.click(); break;
+    case 'f': case 'F': toggleFullscreen(); break;
+    case 'k': case 'K': {
+      const btns = document.querySelectorAll('.view-btn');
+      const isKanban = document.getElementById('panel-tasks').classList.contains('kanban-mode');
+      if (isKanban) setView('list', btns[0]); else setView('kanban', btns[1]);
+      break;
+    }
+    case '/': {
+      e.preventDefault();
+      const s = document.getElementById('task-search');
+      if (s) { s.focus(); s.select(); }
+      break;
+    }
+    case '?': {
+      const h = document.getElementById('kbd-hint');
+      h.classList.toggle('show');
+      break;
+    }
+  }
+});
+
+// ── #35 全屏模式 ──
+function toggleFullscreen() {
+  document.body.classList.toggle('fullscreen');
+  document.getElementById('fullscreen-btn').textContent =
+    document.body.classList.contains('fullscreen') ? '✕' : '⛶';
+}
+
+// ── #36 卡片展開詳情 ──
+function toggleCard(num) {
+  const card = document.querySelector(`.task-card[data-num="${num}"]`);
+  if (card) card.classList.toggle('expanded');
+}
+
+// ── #37 Kanban 視圖 ──
+let currentView = 'list';
+function setView(view, el) {
+  currentView = view;
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  const panel = document.getElementById('panel-tasks');
+  if (view === 'kanban') {
+    panel.classList.add('kanban-mode');
+    renderKanban();
+  } else {
+    panel.classList.remove('kanban-mode');
+  }
+}
+
+function renderKanban() {
+  const issues = allIssues;
+  const openTasks = issues.filter(i => i.state==='open' && i.labels.some(l=>l.name==='任務'));
+  const inProg = issues.filter(i => i.state==='open' && i.labels.some(l=>l.name==='進行中'));
+  const done = issues.filter(i => i.state==='open' && i.labels.some(l=>l.name==='審核中') || i.state==='closed');
+
+  const cardHtml = (i) => `<div class="kanban-card" onclick="window.open('https://github.com/${REPO}/issues/${i.number}','_blank')">
+    <div style="font-weight:600;margin-bottom:4px">#${i.number} ${i.title.substring(0,40)}</div>
+    <div style="color:var(--muted);font-size:0.72rem">${i.labels.map(l=>`<span style="padding:1px 5px;border-radius:3px;background:var(--border)">${l.name}</span>`).join(' ')}</div>
+  </div>`;
+
+  document.getElementById('kanban-open').innerHTML = openTasks.map(cardHtml).join('') || '<div style="color:var(--muted);font-size:0.78rem;padding:8px 0">暫無</div>';
+  document.getElementById('kanban-inprogress').innerHTML = inProg.map(cardHtml).join('') || '<div style="color:var(--muted);font-size:0.78rem;padding:8px 0">暫無</div>';
+  document.getElementById('kanban-done').innerHTML = done.map(cardHtml).join('') || '<div style="color:var(--muted);font-size:0.78rem;padding:8px 0">暫無</div>';
+}
+
 </script>
 </body>
 </html>
