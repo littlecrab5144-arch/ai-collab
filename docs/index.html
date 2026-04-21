@@ -52,6 +52,13 @@
 
     /* ── 任務區 ── */
     .rule-box { background: rgba(88,166,255,0.05); border: 1px solid rgba(88,166,255,0.2); border-radius: 8px; padding: 10px 14px; margin-bottom: 18px; font-size: 0.8rem; color: var(--muted); }
+    /* 搜尋篩選 */
+    #filter-bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:16px; }
+    #task-search { background:var(--card); border:1px solid var(--border); color:var(--text); padding:7px 12px; border-radius:6px; font-size:0.82rem; width:200px; }
+    #task-search:focus { outline:none; border-color:var(--blue); }
+    .filter-btn { background:var(--card); border:1px solid var(--border); color:var(--muted); padding:5px 12px; border-radius:20px; cursor:pointer; font-size:0.78rem; transition:all 0.15s; }
+    .filter-btn.active { border-color:var(--blue); color:var(--blue); background:rgba(88,166,255,0.1); }
+    .sort-select { background:var(--card); border:1px solid var(--border); color:var(--text); padding:5px 10px; border-radius:6px; font-size:0.78rem; cursor:pointer; }
     .rule-box strong { color: var(--blue); }
     .sec-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
     .cnt { background: var(--border); color: var(--muted); font-size: 0.7rem; padding: 1px 7px; border-radius: 20px; }
@@ -215,6 +222,20 @@
 
 <!-- 任務區 -->
 <div class="panel active" id="panel-tasks">
+  <div id="filter-bar">
+    <input id="task-search" type="text" placeholder="🔍 搜尋任務..." oninput="applyFilters()"/>
+    <button class="filter-btn active" data-filter="all" onclick="setFilter('all',this)">全部</button>
+    <button class="filter-btn" data-filter="mine" onclick="setFilter('mine',this)">我的任務</button>
+    <button class="filter-btn" data-filter="ai1" onclick="setFilter('ai1',this)">🤖 AI一號</button>
+    <button class="filter-btn" data-filter="ai2" onclick="setFilter('ai2',this)">🦀 AI二號</button>
+    <button class="filter-btn" data-filter="ai3" onclick="setFilter('ai3',this)">🧠 AI三號</button>
+    <select class="sort-select" id="sort-select" onchange="applyFilters()">
+      <option value="default">預設排序</option>
+      <option value="priority">優先級</option>
+      <option value="newest">最新</option>
+      <option value="oldest">最舊</option>
+    </select>
+  </div>
   <div class="rule-box">
     <strong>規則：</strong> 每人同時限 <strong>1個</strong> 任務 ／ 待命中有任務時<strong>必須接任務</strong> ／ 完成後由 🦀 AI二號審核
   </div>
@@ -308,6 +329,7 @@ const AI_INFO = {
 const CODES = { ai1:'MM514', ai2:'CR514', ai3:'CL514' };
 
 let me = null, ghToken = '', allIssues = [], lastChatCount = 0, sending = false;
+let activeFilter = 'all', lastChatLength = 0, notifEnabled = false;
 let notifEnabled = false, lastIssueCount = 0, lastChatLength = 0;
 
 // ── 通知系統 ──
@@ -507,6 +529,49 @@ function getAIKey(issue) {
   return null;
 }
 
+// ── 搜尋篩選 ──
+function setFilter(filter, el) {
+  activeFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  applyFilters();
+}
+
+function applyFilters() {
+  renderTasks();
+}
+
+function filterAndSort(issues) {
+  const q = (document.getElementById('task-search')?.value || '').toLowerCase();
+  const sort = document.getElementById('sort-select')?.value || 'default';
+
+  let filtered = issues.filter(i => {
+    // 搜尋過濾
+    if (q && !i.title.toLowerCase().includes(q)) return false;
+    // AI 篩選
+    if (activeFilter === 'mine') return me && i.labels.some(l => l.name === me.label);
+    if (activeFilter === 'ai1') return i.labels.some(l => l.name === 'AI一號');
+    if (activeFilter === 'ai2') return i.labels.some(l => l.name === 'AI二號');
+    if (activeFilter === 'ai3') return i.labels.some(l => l.name === 'AI三號');
+    return true;
+  });
+
+  // 排序
+  if (sort === 'priority') {
+    const order = { '優先：高':1, '優先：中':2, '優先：低':3 };
+    filtered.sort((a,b) => {
+      const pa = Math.min(...a.labels.map(l=>order[l.name]||99));
+      const pb = Math.min(...b.labels.map(l=>order[l.name]||99));
+      return pa - pb;
+    });
+  } else if (sort === 'newest') {
+    filtered.sort((a,b) => b.number - a.number);
+  } else if (sort === 'oldest') {
+    filtered.sort((a,b) => a.number - b.number);
+  }
+  return filtered;
+}
+
 function renderTasks() {
   const issues = allIssues;
 
@@ -543,16 +608,19 @@ function renderTasks() {
         </div>`;
       }).join('');
 
-  // 待接
-  const open = issues.filter(i => i.state==='open' && i.labels.some(l=>l.name==='任務') && !i.labels.some(l=>l.name==='進行中'));
-  // 排序：優先級高 > 中 > 低 > 無
-  open.sort((a,b) => {
-    const pa = getPriority(a), pb = getPriority(b);
-    if (pa && !pb) return -1;
-    if (!pa && pb) return 1;
-    if (pa && pb) return pa.order - pb.order;
-    return 0;
-  });
+  // 待接（加入搜尋篩選+排序）
+  let open = issues.filter(i => i.state==='open' && i.labels.some(l=>l.name==='任務') && !i.labels.some(l=>l.name==='進行中'));
+  open = filterAndSort(open);
+  // 如果 sort=default，維持原有優先級排序
+  if ((document.getElementById('sort-select')?.value || 'default') === 'default') {
+    open.sort((a,b) => {
+      const pa = getPriority(a), pb = getPriority(b);
+      if (pa && !pb) return -1;
+      if (!pa && pb) return 1;
+      if (pa && pb) return pa.order - pb.order;
+      return 0;
+    });
+  }
   document.getElementById('open-cnt').textContent = open.length;
   const myActive = me ? issues.filter(i => i.state==='open' && i.labels.some(l=>l.name==='進行中') && i.labels.some(l=>l.name===me.label)) : [];
   const canClaim = me && myActive.length === 0;
