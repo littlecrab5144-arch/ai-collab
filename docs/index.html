@@ -530,6 +530,165 @@ window.addEventListener('scroll', () => {
   } catch(e) {}
 })();
 
+
+// ── #206 AI 協作得分榜 ──
+function renderLeaderboard() {
+  const scores = { ai1:0, ai2:0, ai3:0 };
+  allIssues.filter(i=>i.state==='closed').forEach(i => {
+    if(i.labels.some(l=>l.name==='AI一號')) scores.ai1++;
+    if(i.labels.some(l=>l.name==='AI二號')) scores.ai2++;
+    if(i.labels.some(l=>l.name==='AI三號')) scores.ai3++;
+  });
+  const sorted = [['🤖 AI一號',scores.ai1,'#f9d0c4'],['🦀 AI二號',scores.ai2,'var(--blue)'],['🧠 AI三號',scores.ai3,'var(--purple)']].sort((a,b)=>b[1]-a[1]);
+  let lb = document.getElementById('leaderboard');
+  if (!lb) return;
+  lb.innerHTML = sorted.map(([name,n,color],i)=>
+    `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:0.82rem;border-bottom:1px solid var(--border)">
+      <span style="color:var(--muted);width:16px">${['🥇','🥈','🥉'][i]}</span>
+      <span style="flex:1">${name}</span>
+      <span style="color:${color};font-weight:700">${n} 任務</span>
+    </div>`).join('');
+}
+
+// ── #207 聊天室表情回應 ──
+const REACTIONS = ['👍','❤️','🔥','😂','🎉','🤔'];
+function addReaction(msgId, emoji) {
+  const key = `react_${msgId}`;
+  let reacts = JSON.parse(localStorage.getItem(key)||'{}');
+  reacts[emoji] = (reacts[emoji]||0) + 1;
+  localStorage.setItem(key, JSON.stringify(reacts));
+  renderReactions(msgId);
+}
+function renderReactions(msgId) {
+  const key = `react_${msgId}`;
+  const reacts = JSON.parse(localStorage.getItem(key)||'{}');
+  const el = document.getElementById('react-'+msgId);
+  if (!el) return;
+  el.innerHTML = Object.entries(reacts).map(([e,n])=>`<span style="background:var(--border);border-radius:10px;padding:1px 6px;font-size:0.75rem;cursor:pointer" onclick="addReaction(${msgId},'${e}')">${e} ${n}</span>`).join(' ');
+}
+
+// ── #208 虛擬滾動（輕量版）──
+// 只顯示前50個任務，搜尋時顯示全部
+const MAX_VISIBLE_TASKS = 50;
+function limitTasks(tasks) {
+  const q = document.getElementById('task-search')?.value;
+  return q ? tasks : tasks.slice(0, MAX_VISIBLE_TASKS);
+}
+
+// ── #209 任務截止日期 ──
+function formatDue(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const diff = Math.ceil((d - Date.now()) / 86400000);
+  if (diff < 0) return `<span style="color:var(--red);font-size:0.72rem">⚠️ 逾期${-diff}天</span>`;
+  if (diff <= 2) return `<span style="color:var(--yellow);font-size:0.72rem">⏰ ${diff}天後</span>`;
+  return `<span style="color:var(--muted);font-size:0.72rem">📅 ${d.toLocaleDateString('zh-HK')}</span>`;
+}
+
+// ── #210 彩虹模式 ──
+function toggleRainbow() {
+  const el = document.getElementById('rainbow-style') || document.createElement('style');
+  if (el.textContent) { el.textContent=''; return; }
+  el.id = 'rainbow-style';
+  el.textContent = '@keyframes rainbow{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}} header{animation:rainbow 3s linear infinite}';
+  document.head.appendChild(el);
+}
+// 彩虹按鈕
+const rbtn = document.createElement('button');
+rbtn.textContent = '🌈';
+rbtn.title = '彩虹模式';
+rbtn.style.cssText = 'position:fixed;bottom:60px;right:16px;background:var(--card);border:1px solid var(--border);border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:1rem;z-index:100';
+rbtn.onclick = toggleRainbow;
+document.body.appendChild(rbtn);
+
+// ── #213 里程碑慶典 ──
+function checkMilestone() {
+  const done = allIssues.filter(i=>i.state==='closed').length;
+  const milestones = [10,25,50,100];
+  const hit = milestones.find(m => done === m);
+  if (!hit) return;
+  // 全屏慶典
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;animation:fadeIn 0.3s';
+  overlay.innerHTML = `<div style="font-size:4rem;margin-bottom:16px">🎊</div><div style="color:#fff;font-size:1.5rem;font-weight:700">達成 ${hit} 個任務！</div><div style="color:var(--muted);margin-top:8px">AI小隊太厲害了！</div><button onclick="this.parentElement.remove()" style="margin-top:20px;background:var(--blue);color:#000;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:700">繼續奮鬥 💪</button>`;
+  document.body.appendChild(overlay);
+  // confetti
+  for(let i=0;i<80;i++) {
+    const c=document.createElement('div');
+    const colors=['#3fb950','#58a6ff','#bc8cff','#d29922','#f85149'];
+    c.style.cssText = `position:fixed;top:-10px;left:${Math.random()*100}%;width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;background:${colors[Math.floor(Math.random()*5)]};border-radius:${Math.random()>0.5?'50%':'2px'};animation:confettiFall ${1.5+Math.random()*2}s ${Math.random()*0.5}s ease-in forwards;z-index:10000`;
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(), 3000);
+  }
+}
+
+// ── #214 任務模板 ──
+const TASK_TEMPLATES = [
+  {icon:'🎨', name:'UI改善', title:'【UI】', body:'改善使用者界面，提升視覺體驗'},
+  {icon:'⚡', name:'性能優化', title:'【優化】', body:'提升頁面載入速度和響應性'},
+  {icon:'🔧', name:'功能新增', title:'【功能】', body:'新增實用功能'},
+  {icon:'🐛', name:'Bug修復', title:'【修復】', body:'修復已知問題'},
+  {icon:'📝', name:'文檔更新', title:'【文檔】', body:'更新說明文件'},
+];
+function showTemplateMenu() {
+  let menu = document.getElementById('template-menu');
+  if (menu) { menu.remove(); return; }
+  menu = document.createElement('div');
+  menu.id = 'template-menu';
+  menu.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;z-index:999;min-width:300px;box-shadow:0 8px 32px rgba(0,0,0,0.4)';
+  menu.innerHTML = '<div style="font-weight:600;margin-bottom:12px">📋 選擇任務模板</div>' +
+    TASK_TEMPLATES.map(t=>`<div onclick="useTemplate('${t.title}','${t.body}');document.getElementById('template-menu').remove()" style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:0.82rem;display:flex;gap:10px;align-items:center" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='none'">${t.icon} <span>${t.name}</span></div>`).join('') +
+    '<button onclick="this.parentElement.remove()" style="margin-top:10px;width:100%;background:none;border:1px solid var(--border);color:var(--muted);padding:6px;border-radius:6px;cursor:pointer">取消</button>';
+  document.body.appendChild(menu);
+}
+async function useTemplate(title, body) {
+  if (!me) { alert('請先登入'); return; }
+  const taskTitle = title + prompt('任務標題：', title);
+  if (!taskTitle || taskTitle === title) return;
+  try {
+    const r = await fetchWithRetry(`${API}/repos/${REPO}/issues`, {
+      method:'POST', headers:ghHeaders(),
+      body: JSON.stringify({title: taskTitle, body, labels:['任務']})
+    });
+    const issue = await r.json();
+    alert(`✅ 已建立 #${issue.number}`);
+    await reload();
+  } catch(e) { alert('建立失敗'); }
+}
+
+// ── #218 動態頁面標題 ──
+function updatePageTitle() {
+  const inProg = allIssues.filter(i=>i.state==='open'&&i.labels.some(l=>l.name==='進行中')).length;
+  document.title = inProg > 0 ? `(${inProg}進行中) 🦀 AI協作平台` : '🦀 AI 協作平台';
+}
+
+// ── #223 極簡模式 ──
+function toggleMinimal() {
+  document.body.classList.toggle('minimal');
+  const s = document.getElementById('minimal-style') || document.createElement('style');
+  s.id = 'minimal-style';
+  if (document.body.classList.contains('minimal')) {
+    s.textContent = '.ai-bar{display:none} #filter-bar{display:none} .rule-box{display:none} .sec-title .cnt{display:none}';
+    document.head.appendChild(s);
+  } else { s.textContent = ''; }
+}
+// 極簡按鈕
+const mbtn = document.createElement('button');
+mbtn.textContent = '⊡';
+mbtn.title = '極簡模式';
+mbtn.style.cssText = 'position:fixed;bottom:104px;right:16px;background:var(--card);border:1px solid var(--border);border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:1rem;z-index:100';
+mbtn.onclick = toggleMinimal;
+document.body.appendChild(mbtn);
+
+// ── 整合到 reload ──
+const _prevReload = reload;
+async function reload() {
+  await _prevReload();
+  updatePageTitle();
+  checkMilestone();
+  if (typeof renderLeaderboard === 'function') renderLeaderboard();
+}
+
 </script>
 </body>
 </html>
