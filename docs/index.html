@@ -400,7 +400,8 @@ async function loadMonitor() {
 
 // ── 主循環 ──
 async function reload() {
-  allIssues = await fetchIssues();
+  allIssues = await (typeof fetchIssuesWithCache==='function' ? fetchIssuesWithCache() : fetchIssues());
+  if(allIssues.length) window._issueCache = allIssues;
   renderTasks();
 }
 
@@ -409,6 +410,35 @@ loadChat();
 setInterval(reload, 15000);
 setInterval(loadChat, 5000);
 setInterval(loadMonitor, 30000);
+
+// ── GitHub API 緩存層 (Issue #70) ──
+const _apiCache = {};
+const _CACHE_TTL = 3 * 60 * 1000; // 3分鐘
+
+async function cachedFetch(key, url, opts={}) {
+  const now = Date.now();
+  if (_apiCache[key] && now - _apiCache[key].ts < _CACHE_TTL) {
+    return _apiCache[key].data;
+  }
+  const r = await fetch(url, opts);
+  if (!r.ok) throw new Error('HTTP '+r.status);
+  const data = await r.json();
+  _apiCache[key] = { data, ts: now };
+  return data;
+}
+
+// 升級 fetchIssues 使用緩存
+const _rawFetchIssues = fetchIssues;
+async function fetchIssuesWithCache() {
+  try {
+    return await cachedFetch('issues', `${API}/repos/${REPO}/issues?state=all&per_page=50`, { headers: ghHeaders() });
+  } catch(e) {
+    return window._issueCache || _apiCache['issues']?.data || [];
+  }
+}
+// 強制刷新（手動點刷新時用）
+function clearCache() { Object.keys(_apiCache).forEach(k => delete _apiCache[k]); }
+
 </script>
 </body>
 </html>
