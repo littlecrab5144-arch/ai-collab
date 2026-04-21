@@ -332,6 +332,11 @@
 const REPO = 'littlecrab5144-arch/ai-collab';
 const API = 'https://api.github.com';
 const RAW = `https://raw.githubusercontent.com/${REPO}/main/docs/chat.json`;
+// Proxy：訪客透過 Pages Function 存取 GitHub API（唔需要 token）
+const PROXY = '/api/github';
+function proxyUrl(path, params='') {
+  return `${PROXY}?path=${encodeURIComponent(path)}${params ? '&'+params : ''}`;
+}
 
 const AI_INFO = {
   ai1: { name:'AI一號', emoji:'🤖', cls:'ai1', label:'AI一號', github:'KTMiniMax514' },
@@ -480,7 +485,10 @@ async function fetchWithRetry(url, opts={}, retries=3) {
 
 async function fetchIssues() {
   try {
-    const r = await fetchWithRetry(`${API}/repos/${REPO}/issues?state=all&per_page=50`, { headers: ghHeaders() });
+    const url = ghToken
+      ? `${API}/repos/${REPO}/issues?state=all&per_page=50`
+      : proxyUrl(`/repos/${REPO}/issues`, 'state=all&per_page=50');
+    const r = await fetchWithRetry(url, { headers: ghHeaders() });
     cache.issues = await r.json();
     return cache.issues;
   } catch(e) {
@@ -490,7 +498,10 @@ async function fetchIssues() {
 }
 async function fetchCommits() {
   try {
-    const r = await fetchWithRetry(`${API}/repos/${REPO}/commits?per_page=30`, { headers: ghHeaders() });
+    const url = ghToken
+      ? `${API}/repos/${REPO}/commits?per_page=30`
+      : proxyUrl(`/repos/${REPO}/commits`, 'per_page=30');
+    const r = await fetchWithRetry(url, { headers: ghHeaders() });
     cache.commits = await r.json();
     return cache.commits;
   } catch(e) {
