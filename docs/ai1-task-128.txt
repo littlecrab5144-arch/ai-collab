@@ -1,0 +1,2 @@
+🤖 completed task #128: 【UI】聊天室支援 Markdown 格式
+Completed: 2026-04-22 07:37:33
