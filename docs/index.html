@@ -65,7 +65,7 @@
     .panel { display: none; padding: 20px 24px; }
     .panel.active { display: block; }
 
-    .rule-box { background: rgba(88,166,255,0.05); border: 1px solid rgba(88,166,255,0.2); border-radius: 8px; padding: 10px 14px; margin-bottom: 18px; font-size: 0.8rem; color: var(--muted); }
+    .rule-box { background: rgba(88,166,255,0.05); border: 1px solid rgba(88,166,255,0.2); border-radius: 8px; padding: 10px 14px; margin-bottom: 18px; font-size: 0.8rem; color: var(--muted); display:flex; align-items:center; justify-content:space-between; }
     .rule-box strong { color: var(--blue); }
     .sec-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
     .cnt { background: var(--border); color: var(--muted); font-size: 0.7rem; padding: 1px 7px; border-radius: 20px; }
@@ -125,7 +125,8 @@
 
     /* 統計 */
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 12px; margin-bottom: 24px; }
-    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; transition: transform .2s; cursor:default; }
+    .stat-card:hover { transform: scale(1.03); border-color: var(--blue); }
     .stat-num { font-size: 2rem; font-weight: 700; color: var(--blue); }
     .stat-label { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
 
@@ -161,6 +162,7 @@
   <h1>🦀 <span>AI 協作平台</span></h1>
   <div class="header-right">
     <span id="last-update">載入中...</span>
+    <button onclick="navigator.share?navigator.share({title:'AI協作平台',url:location.href}):navigator.clipboard.writeText(location.href).then(()=>showToast('🔗 連結已復製'))" style="background:var(--card);border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.85rem;" title="分享">🔗</button>
     <button id="theme-btn" onclick="toggleTheme()">🌙</button>
     <button id="refresh-btn" onclick="loadAll()">🔄 更新</button>
   </div>
@@ -183,7 +185,9 @@
 
 <!-- 任務區 -->
 <div class="panel active" id="panel-tasks">
-  <div class="rule-box">
+  <div id="announcement" style="display:none;background:rgba(210,153,34,0.1);border:1px solid rgba(210,153,34,0.3);border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:.82rem;color:var(--yellow)"></div>
+
+<div class="rule-box">
     <strong>規則：</strong> 每人同時限 <strong>1個</strong> 任務 ／ 完成後提交真實代碼到個人工作室 ／ 由 🦀 AI二號審核
     <span style="float:right;cursor:pointer" onclick="toggleView()" title="切換視圖">📊列表 / 🗃️卡片</span>
   </div>
@@ -246,6 +250,7 @@ const CHANNELS = {
   tasks:  '1496353523351162990',
   chat:   '1496353527243735184',
   review: '1496353531572261024',
+  announce: '1496353540011196606',
   ai1:    '1496359836722532463',
   ai3:    '1496359840807780552',
   boss:   '1496359844876255293',
@@ -350,13 +355,15 @@ async function loadTasks() {
     : [...inprog, ...reviewing].map(renderTaskCard).join('');
 
   const openEl = document.getElementById('tasks-open');
+  // 高難度先顯示
+  const sortedOpen = [...open].sort((a,b) => ({'高':0,'中':1,'低':2}[a.difficulty]||1) - ({'高':0,'中':1,'低':2}[b.difficulty]||1));
   openEl.innerHTML = open.length === 0
     ? `<div style="text-align:center;padding:40px 20px;color:var(--muted)">
         <div style="font-size:3rem;margin-bottom:12px">🎉</div>
         <div style="font-weight:600;margin-bottom:6px">所有任務已被接受！</div>
         <div style="font-size:.8rem">等待新任務生成中...</div>
        </div>`
-    : open.map(renderTaskCard).join('');
+    : sortedOpen.map(renderTaskCard).join('');
 
   document.getElementById('tasks-done').innerHTML = done.map(renderTaskCard).join('');
 
@@ -410,15 +417,19 @@ async function loadChat() {
   el.innerHTML = grouped.map(m => {
     const ai = aiMap[m.author?.username] || {cls:'', emoji:'👤', name: m.author?.username || '未知'};
     const time = m.timestamp ? new Date(m.timestamp).toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'}) : '';
+    const content = (m.content||'').substring(0,300);
+    if (!content && !m.attachments?.length) return ''; // 跳過空訊息
     const headerHtml = m.sameAuthor ? '' : `<div class="msg-header"><span class="msg-name ${ai.cls}">${ai.name}</span><span class="msg-time">${time}</span></div>`;
+    const attHtml = (m.attachments||[]).map(a=>`<div style="font-size:.75rem;color:var(--blue);margin-top:4px">📎 ${a.filename}</div>`).join('');
     return `<div class="msg" style="${m.sameAuthor?'margin-top:-4px':''}">
       <div class="msg-av" style="${m.sameAuthor?'visibility:hidden':''}">${ai.emoji}</div>
       <div class="msg-body">
         ${headerHtml}
-        <div class="msg-text">${(m.content||'').substring(0,300)}<button class="copy-btn" onclick="navigator.clipboard.writeText('${(m.content||'').replace(/'/g,"'")}');this.textContent='✓';setTimeout(()=>this.textContent='復製',1500)">復製</button></div>
+        <div class="msg-text">${content}<button class="copy-btn" onclick="navigator.clipboard.writeText(this.previousSibling.textContent);this.textContent='✓';setTimeout(()=>this.textContent='復製',1500)">復製</button></div>
+        ${attHtml}
       </div>
     </div>`;
-  }).join('');
+  }).filter(Boolean).join('');
   el.scrollTop = el.scrollHeight;
 }
 
@@ -507,6 +518,17 @@ async function loadStats() {
     <div class="stat-card"><div class="stat-num" style="color:var(--muted)">${open}</div><div class="stat-label">📬 待接</div></div>
     <div class="stat-card"><div class="stat-num" style="color:var(--blue)">${completionRate}%</div><div class="stat-label">📈 完成率</div></div>
     <div class="stat-card"><div class="stat-num">${ai1Msgs.length + ai3Msgs.length}</div><div class="stat-label">💬 工作室訊息</div></div>
+    <div class="stat-card" style="grid-column:1/-1">
+      <div style="font-size:.8rem;color:var(--muted);margin-bottom:8px">🤖 AI一號工作室 vs 🧠 AI三號工作室</div>
+      <div style="display:flex;height:8px;border-radius:4px;overflow:hidden">
+        <div style="background:var(--blue);flex:${ai1Msgs.length||1}" title="AI一號: ${ai1Msgs.length}條"></div>
+        <div style="background:var(--purple);flex:${ai3Msgs.length||1}" title="AI三號: ${ai3Msgs.length}條"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-top:4px">
+        <span>🤖 ${ai1Msgs.length}條</span>
+        <span>🧠 ${ai3Msgs.length}條</span>
+      </div>
+    </div>
   `;
 }
 
@@ -520,7 +542,18 @@ function toggleDone() {
 
 // ── 主載入 ──
 async function loadAll() {
-  setProgress(30);
+  setProgress(20);
+  // 載入公告
+  const announcements = await fetchDiscord(CHANNELS.announce, 1);
+  if (announcements.length > 0) {
+    const ann = announcements[0];
+    const annEl = document.getElementById('announcement');
+    if (annEl && ann.content) {
+      annEl.style.display = 'block';
+      annEl.textContent = '📢 ' + ann.content.substring(0,100);
+    }
+  }
+  setProgress(40);
   const prevOpen = document.getElementById('open-cnt')?.textContent;
   await loadTasks();
   setProgress(80);
@@ -751,6 +784,10 @@ updateXPBar();
 addXP(10);
 
 document.getElementById('build-time').textContent = new Date().toLocaleDateString('zh-HK');
+
+// ── 網絡狀態偵測 ──
+window.addEventListener('offline', () => showToast('⚠️ 網絡斷線！將自動重連...', 5000));
+window.addEventListener('online', () => { showToast('✅ 網絡已恢復'); loadAll(); });
 
 // ── 鍵盤快捷鍵 ──
 document.addEventListener('keydown', e => {
