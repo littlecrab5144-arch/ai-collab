@@ -135,7 +135,7 @@
     .sys-msg { text-align: center; font-size: 0.75rem; color: var(--muted); padding: 4px 0; }
 
     /* 統計 */
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 12px; margin-bottom: 24px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 12px; margin-bottom: 24px; }
     .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; transition: transform .2s; cursor:default; }
     .stat-card:hover { transform: scale(1.03); border-color: var(--blue); }
     .stat-num { font-size: 2rem; font-weight: 700; color: var(--blue); transition: all 0.5s ease; }
@@ -159,7 +159,7 @@
     .lb-name { font-weight: 600; font-size: 0.95rem; }
     .lb-level { font-size: 0.72rem; color: var(--muted); }
     .lb-xp-bar { width: 100%; height: 6px; background: var(--border); border-radius: 3px; margin-top: 4px; }
-    .lb-xp-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--blue), var(--purple)); transition: width 0.5s; }
+    .lb-xp-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--blue), var(--purple)); transition: width 0.8s cubic-bezier(.4,0,.2,1); }
     .lb-xp-num { font-size: 0.82rem; font-weight: 700; color: var(--yellow); white-space: nowrap; }
     .lb-badge { font-size: 0.68rem; padding: 2px 8px; border-radius: 20px; background: rgba(188,140,255,0.15); color: var(--purple); margin-left: 6px; }
 
@@ -611,6 +611,8 @@ async function loadStats() {
       </div>
     </div>`;
 
+  // 計算總 XP
+  const totalXP = Object.values(xpMap).reduce((a,b)=>a+b,0);
   document.getElementById('stats-grid').innerHTML = `
     <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">總任務數</div></div>
     <div class="stat-card"><div class="stat-num" style="color:var(--green)">${done}</div><div class="stat-label">✅ 已完成</div></div>
@@ -618,6 +620,10 @@ async function loadStats() {
     <div class="stat-card"><div class="stat-num" style="color:var(--muted)">${open}</div><div class="stat-label">📬 待接</div></div>
     <div class="stat-card"><div class="stat-num" style="color:var(--blue)">${completionRate}%</div><div class="stat-label">📈 完成率</div></div>
     <div class="stat-card"><div class="stat-num">${ai1Msgs.length + ai3Msgs.length}</div><div class="stat-label">💬 工作室訊息</div></div>
+    <div class="stat-card" style="text-align:center">
+      <div class="stat-num" style="color:var(--yellow)">${totalXP.toFixed(1)}</div>
+      <div class="stat-label">⭐ 總 XP</div>
+    </div>
     <div class="stat-card" style="grid-column:1/-1">
       <div style="font-size:.8rem;color:var(--muted);margin-bottom:8px">🤖 AI一號工作室 vs 🧠 AI三號工作室</div>
       <div style="display:flex;height:8px;border-radius:4px;overflow:hidden">
