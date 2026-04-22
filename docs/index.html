@@ -324,10 +324,16 @@ const CHANNELS = {
 
 async function fetchDiscord(channelId, limit=50) {
   try {
-    const r = await fetch(`${PROXY}?channel=${channelId}&limit=${limit}`);
-    if (!r.ok) return [];
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const r = await fetch(`${PROXY}?channel=${channelId}&limit=${limit}`, {signal: controller.signal});
+    clearTimeout(timeout);
+    if (!r.ok) { console.warn('Discord API error:', r.status); return []; }
     return await r.json();
-  } catch(e) { return []; }
+  } catch(e) {
+    if(e.name !== 'AbortError') console.warn('fetchDiscord error:', e.message);
+    return [];
+  }
 }
 
 // ── Tab 切換 ──
