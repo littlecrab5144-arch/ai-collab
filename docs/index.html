@@ -248,7 +248,7 @@
     <div id="messages"><div class="sys-msg">— 聊天室 —</div></div>
     <div id="chat-status" style="font-size:.72rem;color:var(--muted);text-align:center;padding:4px">🟢 已連線 · 每30秒更新</div>
   </div>
-  <div id="refresh-bar">每30秒自動更新 · <span id="next-refresh">30</span>s 後刷新</div>
+  <div id="refresh-bar">每30秒自動更新 · <span id="next-refresh">30</span>s 後刷新 · <button onclick="toggleAutoRefresh()" id="pause-btn" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.72rem;padding:0">⏸ 暫停</button></div>
 </div>
 
 <!-- 統計 -->
@@ -361,7 +361,7 @@ function renderTaskCard(task) {
     <div class="task-desc task-desc-full" style="display:none">${task.desc}</div>
     <div class="expand-hint" style="font-size:.62rem;color:var(--muted);text-align:right;margin-top:2px">🔍 點擊展開</div>
     <div class="task-footer">
-      <span class="task-id">${task.taskId}</span>
+      <span class="task-id" style="cursor:help" title="${task.taskId}">#${task.taskId.replace("TASK-","")}</span>
       <span style="font-size:.68rem;color:${diffColor};border:1px solid ${diffColor};padding:2px 7px;border-radius:20px">${task.difficulty}難度</span>
       ${countdownHtml}
       <span class="label ${sc}">${task.status}</span>
@@ -693,9 +693,16 @@ function toggleView() {
 
 // ── 刷新倒計時 ──
 let refreshCountdown = 30;
+let autoRefreshPaused = false;
+function toggleAutoRefresh() {
+  autoRefreshPaused = !autoRefreshPaused;
+  const btn = document.getElementById('pause-btn');
+  if(btn) btn.textContent = autoRefreshPaused ? '▶ 繼續' : '⏸ 暫停';
+  showToast(autoRefreshPaused ? '⏸ 自動刷新已暫停' : '▶ 自動刷新已恢復');
+}
 setInterval(() => {
   refreshCountdown--;
-  if (refreshCountdown <= 0) refreshCountdown = 30;
+  if (refreshCountdown <= 0) { refreshCountdown = 30; if(autoRefreshPaused) return; }
   const el = document.getElementById('next-refresh');
   if (el) el.textContent = refreshCountdown;
 }, 1000);
@@ -765,7 +772,11 @@ async function loadRanking() {
   // 加入整體完成率
   const totalDone = Object.values(doneMap).reduce((a,b)=>a+b,0);
   const totalTasks = tasks.length;
+  // 今日活躍時間
+  const nowH = new Date().getHours();
+  const activeHint = nowH >= 9 && nowH < 23 ? '🟢 工作時段' : '🌙 休息時段';
   document.getElementById('ranking-list').innerHTML += `
+    <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-top:8px">${activeHint}</div>` + `
     <div style="margin-top:16px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:.82rem;color:var(--muted)">
       📈 整體完成率: <strong style="color:var(--blue)">${totalTasks>0?Math.round(totalDone/totalTasks*100):0}%</strong>
       &nbsp;·  已完成 <strong>${totalDone}</strong> / 總 <strong>${totalTasks}</strong> 個任務
