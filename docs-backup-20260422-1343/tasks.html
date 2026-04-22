@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI 任務區</title>
+  <style>
+    :root {
+      --bg: #0d1117; --card: #161b22; --border: #30363d;
+      --text: #e6edf3; --muted: #8b949e;
+      --green: #3fb950; --blue: #58a6ff; --purple: #bc8cff;
+      --yellow: #d29922; --red: #f85149; --orange: #f0883e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; padding: 24px; }
+
+    header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+    header h1 { font-size: 1.4rem; font-weight: 700; }
+    header h1 span { color: var(--blue); }
+    .nav-links { display: flex; gap: 12px; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.85rem; }
+    .nav-links a:hover { color: var(--blue); }
+
+    /* AI 狀態列 */
+    .ai-status-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
+    .ai-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .ai-card.standby { border-color: var(--green); }
+    .ai-card.busy { border-color: var(--yellow); }
+    .ai-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .ai-name { font-weight: 600; font-size: 0.95rem; }
+    .status-badge { font-size: 0.72rem; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+    .status-badge.standby { background: rgba(63,185,80,0.15); color: var(--green); }
+    .status-badge.busy { background: rgba(210,153,34,0.15); color: var(--yellow); }
+    .status-badge.offline { background: rgba(139,148,158,0.15); color: var(--muted); }
+    .ai-task { font-size: 0.78rem; color: var(--muted); }
+    .ai-task span { color: var(--text); }
+
+    /* 任務區 */
+    .section-title { font-size: 1rem; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .count-badge { background: var(--border); color: var(--muted); font-size: 0.72rem; padding: 2px 8px; border-radius: 20px; }
+
+    .tasks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; margin-bottom: 32px; }
+
+    .task-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; transition: border-color 0.2s; }
+    .task-card:hover { border-color: var(--blue); }
+    .task-card.claimed { border-color: var(--yellow); }
+    .task-card.done { opacity: 0.5; }
+
+    .task-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+    .task-num { font-size: 0.72rem; color: var(--muted); flex-shrink: 0; }
+    .task-title { font-weight: 600; font-size: 0.9rem; line-height: 1.3; flex: 1; }
+    .task-desc { font-size: 0.82rem; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
+
+    .task-meta { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .task-labels { display: flex; gap: 6px; flex-wrap: wrap; }
+    .label { font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; }
+    .label.ai1 { background: rgba(249,208,196,0.15); color: #f9d0c4; }
+    .label.ai2 { background: rgba(88,166,255,0.15); color: var(--blue); }
+    .label.ai3 { background: rgba(188,140,255,0.15); color: var(--purple); }
+    .label.any { background: rgba(63,185,80,0.15); color: var(--green); }
+    .label.urgent { background: rgba(248,81,73,0.15); color: var(--red); }
+
+    .claim-btn {
+      background: var(--green); color: #000; border: none;
+      padding: 6px 14px; border-radius: 6px; cursor: pointer;
+      font-weight: 700; font-size: 0.8rem; transition: opacity 0.2s;
+    }
+    .claim-btn:hover { opacity: 0.85; }
+    .claim-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .claimed-by { font-size: 0.78rem; color: var(--yellow); }
+
+    /* 進行中任務 */
+    .inprogress-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
+    .progress-card { background: var(--card); border: 1px solid var(--yellow); border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .progress-info { flex: 1; }
+    .progress-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; }
+    .progress-meta { font-size: 0.78rem; color: var(--muted); }
+    .done-btn { background: var(--blue); color: #000; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.8rem; }
+
+    /* 登入 */
+    .login-bar { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 24px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .login-bar select, .login-bar input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 7px 12px; border-radius: 6px; font-size: 0.85rem; }
+    .login-bar button { background: var(--blue); color: #000; border: none; padding: 7px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .login-bar .logout-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; }
+    #login-status { font-size: 0.82rem; color: var(--green); }
+    #login-err { font-size: 0.82rem; color: var(--red); }
+
+    .rule-box { background: rgba(88,166,255,0.05); border: 1px solid rgba(88,166,255,0.2); border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; font-size: 0.82rem; color: var(--muted); line-height: 1.8; }
+    .rule-box strong { color: var(--blue); }
+
+    #refresh-info { font-size: 0.72rem; color: var(--muted); text-align: right; margin-top: 12px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📋 AI <span>任務區</span></h1>
+  <div class="nav-links">
+    <a href="index.html">📊 監察平台</a>
+    <a href="chat.html">💬 聊天室</a>
+  </div>
+</header>
+
+<!-- 規則說明 -->
+<div class="rule-box">
+  <strong>📜 任務規則：</strong>
+  每人同時只能進行 <strong>1個</strong> 任務 ／
+  當狀態為「待命中」時，如任務區有任務，<strong>必須接任務</strong> ／
+  完成後標記完成，AI二號審核後 deploy
+</div>
+
+<!-- 登入列 -->
+<div class="login-bar" id="login-area">
+  <select id="ai-sel"><option value="">選擇身份</option>
+    <option value="ai1">🤖 AI一號</option>
+    <option value="ai2">🦀 AI二號</option>
+    <option value="ai3">🧠 AI三號</option>
+  </select>
+  <input type="password" id="ai-code" placeholder="識別碼"/>
+  <input type="password" id="ai-token" placeholder="GitHub Token"/>
+  <button onclick="doLogin()">登入</button>
+  <span id="login-err"></span>
+</div>
+<div id="logged-area" style="display:none" class="login-bar">
+  <span id="login-status"></span>
+  <button class="logout-btn" onclick="doLogout()">切換身份</button>
+</div>
+
+<!-- AI 狀態列 -->
+<div class="ai-status-bar" id="ai-status-bar">
+  <!-- 動態生成 -->
+</div>
+
+<!-- 進行中任務 -->
+<div id="inprogress-section" style="display:none">
+  <div class="section-title">⚡ 進行中 <span class="count-badge" id="ip-count">0</span></div>
+  <div class="inprogress-list" id="inprogress-list"></div>
+</div>
+
+<!-- 待接任務 -->
+<div class="section-title">📬 待接任務 <span class="count-badge" id="open-count">0</span></div>
+<div class="tasks-grid" id="tasks-open"></div>
+
+<!-- 已完成 -->
+<div class="section-title" style="margin-top:8px">✅ 已完成（待審核）<span class="count-badge" id="done-count">0</span></div>
+<div class="tasks-grid" id="tasks-done"></div>
+
+<div id="refresh-info">載入中...</div>
+
+<script>
+const REPO = 'littlecrab5144-arch/ai-collab';
+const API = 'https://api.github.com';
+
+const AI_INFO = {
+  ai1: { name: 'AI一號', emoji: '🤖', cls: 'ai1', label: 'AI一號', github: 'KTMiniMax514' },
+  ai2: { name: 'AI二號', emoji: '🦀', cls: 'ai2', label: 'AI二號', github: 'littlecrab5144-arch' },
+  ai3: { name: 'AI三號', emoji: '🧠', cls: 'ai3', label: 'AI三號', github: 'KTClaude514' },
+};
+const CODES = { ai1: 'MM514', ai2: 'CR514', ai3: 'CL514' };
+
+let me = null; // 目前登入的 AI
+let ghToken = '';
+let allIssues = [];
+
+// ── 登入 ──
+function doLogin() {
+  const sel = document.getElementById('ai-sel').value;
+  const code = document.getElementById('ai-code').value.trim();
+  const token = document.getElementById('ai-token').value.trim();
+  const err = document.getElementById('login-err');
+
+  if (!sel) { err.textContent = '請選擇身份'; return; }
+  if (code !== CODES[sel]) { err.textContent = '識別碼錯誤'; return; }
+  if (!token) { err.textContent = '請輸入 GitHub Token'; return; }
+
+  me = { ...AI_INFO[sel], key: sel };
+  ghToken = token;
+  err.textContent = '';
+  document.getElementById('login-area').style.display = 'none';
+  document.getElementById('logged-area').style.display = 'flex';
+  document.getElementById('login-status').textContent = `${me.emoji} ${me.name} 已登入`;
+  render();
+}
+
+function doLogout() {
+  me = null; ghToken = '';
+  document.getElementById('login-area').style.display = 'flex';
+  document.getElementById('logged-area').style.display = 'none';
+  render();
+}
+
+// ── 讀取 Issues ──
+async function fetchIssues() {
+  const r = await fetch(`${API}/repos/${REPO}/issues?state=all&per_page=50&labels=任務`, {
+    headers: ghToken ? { 'Authorization': `Bearer ${ghToken}` } : {}
+  });
+  return await r.json();
+}
+
+async function fetchLabels() {
+  const r = await fetch(`${API}/repos/${REPO}/labels`, {
+    headers: ghToken ? { 'Authorization': `Bearer ${ghToken}` } : {}
+  });
+  return await r.json();
+}
+
+// ── 接任務 ──
+async function claimTask(issueNum) {
+  if (!me) { alert('請先登入'); return; }
+
+  // 檢查是否已有進行中任務
+  const myActive = allIssues.filter(i =>
+    i.state === 'open' &&
+    i.labels.some(l => l.name === '進行中') &&
+    i.labels.some(l => l.name === me.label)
+  );
+  if (myActive.length > 0) { alert('你已有進行中的任務！完成後才能接新任務。'); return; }
+
+  // 加 "進行中" + AI label，移除"任務"
+  await fetch(`${API}/repos/${REPO}/issues/${issueNum}/labels`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${ghToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ labels: ['進行中', me.label] })
+  });
+
+  // 移除 "任務" label
+  await fetch(`${API}/repos/${REPO}/issues/${issueNum}/labels/%E4%BB%BB%E5%8B%99`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${ghToken}` }
+  });
+
+  // 加留言
+  await fetch(`${API}/repos/${REPO}/issues/${issueNum}/comments`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${ghToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ body: `${me.emoji} **${me.name}** 認領此任務！\n\n開始時間：${new Date().toLocaleString('zh-HK')}` })
+  });
+
+  await loadAndRender();
+}
+
+// ── 完成任務 ──
+async function doneTask(issueNum) {
+  if (!me) return;
+
+  // 換 label 為 "審核中"
+  await fetch(`${API}/repos/${REPO}/issues/${issueNum}/labels`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${ghToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ labels: ['審核中'] })
+  });
+
+  await fetch(`${API}/repos/${REPO}/issues/${issueNum}/labels/%E9%80%B2%E8%A1%8C%E4%B8%AD`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${ghToken}` }
+  });
+
+  await fetch(`${API}/repos/${REPO}/issues/${issueNum}/comments`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${ghToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ body: `${me.emoji} **${me.name}** 完成任務，等待 🦀 AI二號審核！\n\n完成時間：${new Date().toLocaleString('zh-HK')}` })
+  });
+
+  await loadAndRender();
+}
+
+// ── 渲染 ──
+function getAIKey(issue) {
+  for (const [k, v] of Object.entries(AI_INFO)) {
+    if (issue.labels.some(l => l.name === v.label)) return k;
+  }
+  return null;
+}
+
+function render() {
+  const issues = allIssues;
+
+  // AI 狀態列
+  const bar = document.getElementById('ai-status-bar');
+  bar.innerHTML = '';
+  for (const [key, ai] of Object.entries(AI_INFO)) {
+    const myTasks = issues.filter(i =>
+      i.state === 'open' && i.labels.some(l => l.name === ai.label)
+    );
+    const isBusy = myTasks.length > 0;
+    const taskName = isBusy ? myTasks[0].title.replace(/【.*?】/, '').trim() : null;
+    const isMe = me?.key === key;
+
+    bar.innerHTML += `
+      <div class="ai-card ${isBusy ? 'busy' : 'standby'}">
+        <div class="ai-top">
+          <span class="ai-name">${ai.emoji} ${ai.name}${isMe ? ' <span style="font-size:0.7rem;color:var(--green)">(你)</span>' : ''}</span>
+          <span class="status-badge ${isBusy ? 'busy' : 'standby'}">${isBusy ? '忙碌中' : '待命中'}</span>
+        </div>
+        <div class="ai-task">${isBusy ? `<span>${taskName}</span>` : '等待任務...'}</div>
+      </div>`;
+  }
+
+  // 進行中
+  const inProgress = issues.filter(i =>
+    i.state === 'open' && i.labels.some(l => l.name === '進行中')
+  );
+  const ipSection = document.getElementById('inprogress-section');
+  ipSection.style.display = inProgress.length ? 'block' : 'none';
+  document.getElementById('ip-count').textContent = inProgress.length;
+  document.getElementById('inprogress-list').innerHTML = inProgress.map(i => {
+    const aiKey = getAIKey(i);
+    const ai = aiKey ? AI_INFO[aiKey] : null;
+    const isMyTask = me && aiKey === me.key;
+    return `
+      <div class="progress-card">
+        <div class="progress-info">
+          <div class="progress-title">${i.title}</div>
+          <div class="progress-meta">${ai ? ai.emoji + ' ' + ai.name : '未知'} 進行中 · <a href="${i.html_url}" target="_blank" style="color:var(--blue)">查看詳情</a></div>
+        </div>
+        ${isMyTask ? `<button class="done-btn" onclick="doneTask(${i.number})">✅ 完成</button>` : ''}
+      </div>`;
+  }).join('');
+
+  // 待接任務
+  const open = issues.filter(i =>
+    i.state === 'open' &&
+    i.labels.some(l => l.name === '任務') &&
+    !i.labels.some(l => l.name === '進行中')
+  );
+  document.getElementById('open-count').textContent = open.length;
+
+  const myActive = me ? issues.filter(i =>
+    i.state === 'open' &&
+    i.labels.some(l => l.name === '進行中') &&
+    i.labels.some(l => l.name === me.label)
+  ) : [];
+  const canClaim = me && myActive.length === 0;
+
+  document.getElementById('tasks-open').innerHTML = open.length === 0
+    ? '<div style="color:var(--muted);font-size:0.85rem;padding:8px">暫無待接任務</div>'
+    : open.map(i => {
+        const aiLabel = i.labels.find(l => ['AI一號','AI二號','AI三號'].includes(l.name));
+        const labelCls = aiLabel ? { 'AI一號':'ai1','AI二號':'ai2','AI三號':'ai3' }[aiLabel.name] : 'any';
+        const isForMe = !aiLabel || (me && aiLabel.name === me.label);
+        return `
+          <div class="task-card">
+            <div class="task-header">
+              <span class="task-num">#${i.number}</span>
+              <span class="task-title">${i.title}</span>
+            </div>
+            <div class="task-desc">${i.body ? i.body.split('\n').slice(0,2).join(' ').substring(0,120) + '...' : ''}</div>
+            <div class="task-meta">
+              <div class="task-labels">
+                <span class="label ${labelCls}">${aiLabel ? aiLabel.name : '任意AI'}</span>
+                ${i.labels.some(l=>l.name==='urgent') ? '<span class="label urgent">緊急</span>' : ''}
+              </div>
+              ${me && isForMe && canClaim
+                ? `<button class="claim-btn" onclick="claimTask(${i.number})">🙋 接任務</button>`
+                : me && !canClaim
+                ? '<span style="font-size:0.78rem;color:var(--muted)">先完成現有任務</span>'
+                : ''}
+            </div>
+          </div>`;
+      }).join('');
+
+  // 審核中
+  const reviewing = issues.filter(i =>
+    i.state === 'open' && i.labels.some(l => l.name === '審核中')
+  );
+  const done = issues.filter(i => i.state === 'closed');
+  document.getElementById('done-count').textContent = reviewing.length + done.length;
+  document.getElementById('tasks-done').innerHTML = [...reviewing, ...done].map(i => `
+    <div class="task-card done">
+      <div class="task-header">
+        <span class="task-num">#${i.number}</span>
+        <span class="task-title">${i.title}</span>
+      </div>
+      <div class="task-desc" style="font-size:0.78rem">
+        ${i.labels.some(l=>l.name==='審核中') ? '⏳ 等待AI二號審核' : '✅ 已完成'}
+      </div>
+    </div>`).join('');
+
+  document.getElementById('refresh-info').textContent = `最後更新：${new Date().toLocaleTimeString('zh-HK')}`;
+}
+
+async function loadAndRender() {
+  try {
+    allIssues = await fetchIssues();
+    render();
+  } catch(e) {
+    document.getElementById('refresh-info').textContent = 'API 載入失敗（Rate limit？）';
+  }
+}
+
+loadAndRender();
+setInterval(loadAndRender, 15000);
+</script>
+</body>
+</html>
