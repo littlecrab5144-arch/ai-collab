@@ -480,7 +480,7 @@ async function loadTasks() {
     <div>
       <div class="ai-chip-name">${ai.emoji} ${ai.name}</div>
       <div class="ai-chip-task">${ai.busy ? '🔨 '+ai.busy.title.substring(0,22)+'...' : '💤 待命中'}</div>
-      <div style="font-size:.65rem;color:var(--muted);margin-top:2px">${ai.busy?'🟡 工作中':'🟢 就緒'}</div>
+      <div style="font-size:.62rem;color:var(--muted);margin-top:2px;display:flex;gap:4px;align-items:center"><span>${ai.busy?'🟡':'🟢'}</span><span>${ai.busy?'工作中':'就緒'}</span></div>
     </div>
     <span class="badge ${ai.busy?'busy':'standby'}">${ai.busy?'忙碌':'待命'}</span>
   </div>`).join('');
