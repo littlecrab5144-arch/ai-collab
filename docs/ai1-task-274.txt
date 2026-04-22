@@ -1,0 +1,2 @@
+🤖 completed task #274: 【功能】加入 GitHub Labels 自動同步
+Completed: 2026-04-22 08:09:56
