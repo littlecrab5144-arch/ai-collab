@@ -70,7 +70,7 @@
     .tab:hover { color: var(--text); }
     .tab.active { color: var(--blue); border-bottom: 3px solid var(--blue); font-weight: 700; }
 
-    .panel { display: none; padding: 20px 24px; }
+    .panel { display: none; padding: 20px 24px; animation: fadeIn .25s ease; }
     .panel.active { display: block; }
 
     .rule-box { background: rgba(88,166,255,0.05); border: 1px solid rgba(88,166,255,0.2); border-radius: 8px; padding: 10px 14px; margin-bottom: 18px; font-size: 0.8rem; color: var(--muted); display:flex; align-items:center; justify-content:space-between; }
@@ -595,7 +595,7 @@ async function loadStats() {
   document.getElementById('task-donut').innerHTML = `
     <div class="donut-wrap">
       <div class="donut">
-        <svg width="80" height="80" viewBox="0 0 80 80">
+        <svg width="80" height="80" viewBox="0 0 80 80" style="animation:fadeIn .6s ease">
           <circle cx="40" cy="40" r="${r}" fill="none" stroke="var(--border)" stroke-width="10"/>
           <circle cx="40" cy="40" r="${r}" fill="none" stroke="var(--green)" stroke-width="10"
             stroke-dasharray="${doneD} ${circ}" stroke-linecap="round"/>
@@ -779,7 +779,10 @@ async function loadRanking() {
   const nowH = new Date().getHours();
   const activeHint = nowH >= 9 && nowH < 23 ? '🟢 工作時段' : '🌙 休息時段';
   document.getElementById('ranking-list').innerHTML += `
-    <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-top:8px">${activeHint}</div>` + `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:8px 12px;background:var(--card);border-radius:6px;border:1px solid var(--border)">
+      <span style="font-size:.72rem;color:var(--muted)">${activeHint}</span>
+      <button onclick="navigator.clipboard.writeText(location.href).then(()=>showToast('🔗 排行榜連結已複製'))" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem">🔗 分享</button>
+    </div>` + `
     <div style="margin-top:16px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:.82rem;color:var(--muted)">
       📈 整體完成率: <strong style="color:var(--blue)">${totalTasks>0?Math.round(totalDone/totalTasks*100):0}%</strong>
       &nbsp;·  已完成 <strong>${totalDone}</strong> / 總 <strong>${totalTasks}</strong> 個任務
