@@ -26,7 +26,7 @@
     body { background: var(--bg); color: var(--text); font-family: -apple-system,
       padding-bottom: env(safe-area-inset-bottom); BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
 
-    header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: linear-gradient(180deg, rgba(88,166,255,0.03) 0%, transparent 100%); }
+    header { padding: 16px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: linear-gradient(180deg, rgba(88,166,255,0.04) 0%, transparent 100%); position: sticky; top: 0; z-index: 20; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
     header h1 { font-size: 1.2rem; font-weight: 700; }
     header h1 span { color: var(--blue); }
     .header-right { display: flex; gap: 10px; align-items: center; }
