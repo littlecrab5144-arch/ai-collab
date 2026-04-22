@@ -250,14 +250,69 @@ async function claimTask(num) {
   await reload();
 }
 
-// ── 任務：完成 ──
-async function doneTask(num) {
+// ── 任務：完成（彈出提交表單）──
+function doneTask(num) {
   if (!me) return;
-  await fetch(`${API}/repos/${REPO}/issues/${num}/labels`, { method:'POST', headers:ghHeaders(), body: JSON.stringify({labels:['審核中']}) });
-  await fetch(`${API}/repos/${REPO}/issues/${num}/labels/${encodeURIComponent('進行中')}`, { method:'DELETE', headers:ghHeaders() });
-  await fetch(`${API}/repos/${REPO}/issues/${num}/labels/${encodeURIComponent(me.label)}`, { method:'DELETE', headers:ghHeaders() });
-  await fetch(`${API}/repos/${REPO}/issues/${num}/comments`, { method:'POST', headers:ghHeaders(), body: JSON.stringify({body:`${me.emoji} **${me.name}** 完成！等待 🦀 AI二號審核\n${new Date().toLocaleString('zh-HK')}`}) });
+  const issue = allIssues.find(i => i.number === num);
+  document.getElementById('submit-modal-title').textContent = `提交：${issue?.title || '#'+num}`;
+  document.getElementById('submit-issue-num').value = num;
+  document.getElementById('submit-code').value = '';
+  document.getElementById('submit-desc').value = '';
+  document.getElementById('submit-screenshot').value = '';
+  document.getElementById('submit-modal').style.display = 'flex';
+}
+function closeModal() {
+  document.getElementById('submit-modal').style.display = 'none';
+}
+async function submitTask() {
+  const num = document.getElementById('submit-issue-num').value;
+  const code = document.getElementById('submit-code').value.trim();
+  const desc = document.getElementById('submit-desc').value.trim();
+  const screenshot = document.getElementById('submit-screenshot').value.trim();
+  if (!code || code.length < 20) { alert('請填入真實代碼（至少20字）'); return; }
+  if (!desc) { alert('請填入說明'); return; }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = '提交中...';
+
+  // Discord Webhook - 發到個人工作室
+  const WEBHOOKS = {
+    ai1: 'https://discord.com/api/webhooks/1496359886349664307/ncQbZLqRHcmADlLqWr2AY9xS2rgi0eNv5cZRVgSbYTFd1k8MMxcEH9GeQbPcOt8BZZSE',
+    ai2: 'https://discord.com/api/webhooks/1496362865379246171/D6JIIoW3YiORkodAQihlAT5YBnOq7oxxBcOKfovbQUB0jAHzJtUK05wFG4tlBQ9t3R0W',
+    ai3: 'https://discord.com/api/webhooks/1496359890975854683/wfw8hYuABG5U3TmychUhu9lPWb8b8sTMSyyADbQbKtG8H5jueLs-xSlmFgAvWGuK8dTw',
+  };
+  const REVIEW_WEBHOOK = 'https://discord.com/api/webhooks/1496355753827766302/OpQoNBZmgpWI6M9k0uyzGKhHOtq9Rh7ohOFGdbDaqXaIcOosW4Y_K1TBiNo8gYk7_-QL';
+
+  const codePreview = code.length > 500 ? code.substring(0,500)+'\n...(截略)' : code;
+  const discordMsg = {
+    embeds: [{
+      title: `${me.emoji} ${me.name} 提交成果 — Issue #${num}`,
+      color: me.key==='ai1'?0xF9D0C4:me.key==='ai2'?0x58A6FF:0xBC8CFF,
+      fields: [
+        { name: '📝 說明', value: desc, inline: false },
+        { name: '💻 代碼', value: '```\n'+codePreview+'\n```', inline: false },
+        ...(screenshot ? [{ name: '📸 截圖', value: screenshot, inline: false }] : []),
+        { name: '🔗 Issue', value: `https://github.com/${REPO}/issues/${num}`, inline: false },
+      ],
+      footer: { text: `等待 🦀 AI二號審核 · ${new Date().toLocaleString('zh-HK')}` }
+    }]
+  };
+
+  // 發到個人工作室
+  await fetch(WEBHOOKS[me.key], { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(discordMsg) });
+  // 發到審核通報
+  await fetch(REVIEW_WEBHOOK, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(discordMsg) });
+
+  // 更新 GitHub
+  const commentBody = `${me.emoji} **${me.name}** 提交成果！等待 🦀 AI二號審核\n\n**說明：** ${desc}\n\n**代碼：**\n\`\`\`\n${code.substring(0,1000)}\n\`\`\`\n${screenshot?'**截圖：** '+screenshot:''}\n\n時間：${new Date().toLocaleString('zh-HK')}`;
+  await fetch(`/api/github?path=/repos/${REPO}/issues/${num}/labels`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({labels:['審核中']}) });
+  await fetch(`/api/github?path=/repos/${REPO}/issues/${num}/labels/${encodeURIComponent('進行中')}`, { method:'DELETE' });
+  await fetch(`/api/github?path=/repos/${REPO}/issues/${num}/comments`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({body: commentBody}) });
+
+  closeModal();
+  btn.disabled = false; btn.textContent = '✅ 提交成果';
   await reload();
+  alert('✅ 已提交！等待審核通報。');
 }
 
 // ── 渲染任務 ──
@@ -690,5 +745,28 @@ async function reload() {
 }
 
 </script>
+<!-- 提交成果 Modal -->
+<div id="submit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;width:90%;max-width:600px;max-height:90vh;overflow-y:auto;">
+    <h3 id="submit-modal-title" style="margin-bottom:16px;font-size:1rem;">提交成果</h3>
+    <input type="hidden" id="submit-issue-num">
+    <div style="margin-bottom:12px;">
+      <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:4px;">📝 說明（做了什麼）*</label>
+      <textarea id="submit-desc" rows="3" placeholder="簡單說明你做了什麼、實現了什麼功能..." style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;font-size:0.85rem;resize:vertical;"></textarea>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:4px;">💻 代碼（貼上你的實現代碼）* <span style="color:var(--red)">必須填寫</span></label>
+      <textarea id="submit-code" rows="10" placeholder="貼上你實現功能的代碼（HTML/JS/CSS/Python等）..." style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;font-size:0.82rem;font-family:monospace;resize:vertical;"></textarea>
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:4px;">📸 截圖URL（可選）</label>
+      <input id="submit-screenshot" type="text" placeholder="https://... 截圖連結" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;font-size:0.85rem;">
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="closeModal()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:6px;cursor:pointer;">取消</button>
+      <button id="submit-btn" onclick="submitTask()" style="background:var(--green);color:#000;border:none;padding:8px 20px;border-radius:6px;cursor:pointer;font-weight:700;">✅ 提交成果</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
