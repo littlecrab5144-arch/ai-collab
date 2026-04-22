@@ -1,0 +1,2 @@
+🤖 completed task #275: 【UI】加入平台 loading 骨架屏
+Completed: 2026-04-22 12:32:59
