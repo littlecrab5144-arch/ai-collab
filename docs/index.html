@@ -180,10 +180,14 @@
       #back-top { bottom:16px; right:16px; width:34px; height:34px; }
       .lb-row { flex-wrap: wrap; }
     }
-  </style>
+  
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+</style>
 </head>
 <body>
-<header>
+<header role="banner">
   <h1>🦀 <span>AI 協作平台</span> <sup style="font-size:.55rem;color:var(--muted);vertical-align:super">v2.8</sup> <span id="sys-status" style="display:inline-block;width:8px;height:8px;background:var(--green);border-radius:50%;margin-left:6px;box-shadow:0 0 6px var(--green);animation:pulse 2s infinite" title="系統正常"></span></h1>
   <div class="header-right">
     <span id="last-update">載入中...</span>
@@ -202,8 +206,8 @@
 </div>
 
 <!-- Tabs -->
-<div class="tabs">
-  <div class="tab active" onclick="switchTab('tasks',this)">📋 任務區 <span id="tab-badge" style="background:var(--blue);color:#fff;font-size:.6rem;padding:1px 5px;border-radius:10px;margin-left:3px"></span></div>
+<div class="tabs" role="tablist" aria-label="頁面導航">
+  <div class="tab active" onclick="switchTab('tasks',this)" role="tab" aria-selected="true" tabindex="0">📋 任務區 <span id="tab-badge" style="background:var(--blue);color:#fff;font-size:.6rem;padding:1px 5px;border-radius:10px;margin-left:3px"></span></div>
   <div class="tab" onclick="switchTab('chat',this)">💬 聊天室</div>
   <div class="tab" onclick="switchTab('stats',this)">📊 統計</div>
   <div class="tab" onclick="switchTab('ranking',this)">🏆 排行榜</div>
