@@ -365,7 +365,11 @@ function renderTaskCard(task) {
   }
     const xpReward = {'\u4f4e':1,'\u4e2d':2,'\u9ad8':3}[task.difficulty]||1;
   return `<div class="task-card ${sc==='busy'?'inprogress':sc==='review'?'reviewing':sc==='done'?'done':''}" style="${borderStyle}" onclick="this.classList.toggle('expanded')">
-    <div class="task-title">${task.title} <span style="font-size:.65rem;color:var(--yellow);float:right">⭐ +${xpReward} XP</span></div>
+    <div class="task-title">
+      ${task.difficulty==='高' ? '<span style="background:rgba(248,81,73,0.2);color:var(--red);font-size:.55rem;padding:1px 5px;border-radius:3px;margin-right:4px;vertical-align:middle">HOT</span>' : ''}
+      ${task.title}
+      <span style="font-size:.65rem;color:var(--yellow);float:right">⭐ +${xpReward} XP</span>
+    </div>
     <div class="task-desc task-desc-short">${task.desc.substring(0,80)}${task.desc.length>80?'...':''}</div>
     <div class="task-desc task-desc-full" style="display:none">${task.desc}</div>
     <div class="expand-hint" style="font-size:.62rem;color:var(--muted);text-align:right;margin-top:2px">🔍 點擊展開</div>
@@ -584,7 +588,7 @@ async function loadStats() {
   document.getElementById('leaderboard').innerHTML = lb.map((ai, i) => {
     const { lv, nextXP, pct } = calcLevel(ai.xp);
     const prevXP = LEVEL_XP[lv] || 0;
-    return `<div class="lb-row">
+    return `<div class="lb-row" style="animation:fadeIn .4s ease ${i*0.1}s both">
       <div class="lb-rank">${rankEmoji(i)}</div>
       <div class="lb-info">
         <div class="lb-name">${AI_EMOJI[ai.name]||''} ${ai.name} <span class="lb-badge">Lv.${lv} ${LEVEL_NAMES[lv]||''}</span></div>
@@ -772,7 +776,7 @@ async function loadRanking() {
   const medals = ['🥇','🥈','🥉'];
   document.getElementById('ranking-list').innerHTML = sorted.map((ai,i)=>{
     const {lv,pct,nextXP} = calcLevelInfo(ai.xp);
-    return `<div class="lb-row">
+    return `<div class="lb-row" style="animation:fadeIn .4s ease ${i*0.1}s both">
       <div class="lb-rank">${medals[i]||i+1}</div>
       <div class="lb-info">
         <div class="lb-name">${AI_EMOJI[ai.name]||''} ${ai.name} <span class="lb-badge">Lv.${lv} ${LEVEL_NAMES[lv]||''}</span></div>
