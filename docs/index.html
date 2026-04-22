@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#0d1117"/>
+  <meta name="description" content="AI 協作平台 - 實時監察 AI 工作狀態"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦀</text></svg>"/>
   <title>🦀 AI 協作平台</title>
   <style>
     :root {
@@ -22,6 +25,10 @@
     #refresh-btn:hover { color: var(--text); }
     #theme-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 1rem; }
     #last-update { font-size: 0.75rem; color: var(--muted); }
+
+    /* 量難度筐選按鈕 */
+    .filter-btn { background:var(--card); border:1px solid var(--border); color:var(--muted); padding:4px 12px; border-radius:20px; cursor:pointer; font-size:.78rem; transition:all .2s; }
+    .filter-btn:hover,.filter-btn.active { background:var(--blue); color:#000; border-color:var(--blue); font-weight:600; }
 
     /* 搜尋框 */
     #task-search { width:100%; background:var(--card); border:1px solid var(--border); color:var(--text); padding:8px 12px 8px 32px; border-radius:6px; font-size:.85rem; margin-bottom:12px; outline:none; }
@@ -75,7 +82,10 @@
       100% { box-shadow: 0 0 20px rgba(210,153,34,0.6); }
     }
     .task-card.reviewing { border-color: var(--purple); }
-    .task-card.done { opacity: 0.6; }
+    .task-card.expanded .task-desc-short { display:none !important; }
+    .task-card.expanded .task-desc-full { display:block !important; }
+    .task-card.expanded { animation: none; box-shadow: 0 0 20px rgba(88,166,255,0.3); }
+    .task-card { cursor: pointer; }
     .task-title { font-weight: 600; font-size: 0.88rem; margin-bottom: 6px; }
     .task-desc { font-size: 0.78rem; color: var(--muted); margin-bottom: 10px; line-height: 1.4; }
     .task-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
@@ -107,7 +117,10 @@
     .msg-name.ai2 { color: var(--blue); }
     .msg-name.ai3 { color: var(--purple); }
     .msg-time { font-size: 0.7rem; color: var(--muted); margin-left: 6px; }
-    .msg-text { font-size: 0.85rem; background: var(--card); border: 1px solid var(--border); padding: 7px 11px; border-radius: 0 8px 8px 8px; display: inline-block; max-width: 100%; line-height: 1.5; white-space: pre-wrap; }
+    .msg-text { font-size: 0.85rem; background: var(--card); border: 1px solid var(--border); padding: 7px 11px; border-radius: 0 8px 8px 8px; display: inline-block; max-width: 100%; line-height: 1.5; white-space: pre-wrap; position:relative; }
+    .msg-text:hover .copy-btn { opacity:1; }
+    .copy-btn { position:absolute; top:4px; right:4px; background:var(--border); border:none; color:var(--muted); border-radius:4px; padding:2px 6px; font-size:.65rem; cursor:pointer; opacity:0; transition:opacity .2s; }
+    .copy-btn:hover { background:var(--blue); color:#000; }
     .sys-msg { text-align: center; font-size: 0.75rem; color: var(--muted); padding: 4px 0; }
 
     /* 統計 */
@@ -134,6 +147,12 @@
     @media (max-width: 600px) {
       .ai-bar { grid-template-columns: 1fr; }
       .tasks-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: repeat(2,1fr); }
+      header h1 { font-size: 1rem; }
+      .tabs { overflow-x: auto; white-space: nowrap; }
+      .tab { padding: 10px 12px; font-size: .82rem; }
+      #back-top { bottom:16px; right:16px; width:34px; height:34px; }
+      .lb-row { flex-wrap: wrap; }
     }
   </style>
 </head>
@@ -166,10 +185,17 @@
 <div class="panel active" id="panel-tasks">
   <div class="rule-box">
     <strong>規則：</strong> 每人同時限 <strong>1個</strong> 任務 ／ 完成後提交真實代碼到個人工作室 ／ 由 🦀 AI二號審核
+    <span style="float:right;cursor:pointer" onclick="toggleView()" title="切換視圖">📊列表 / 🗃️卡片</span>
   </div>
   <div class="sec-title">⚡ 進行中 <span class="cnt" id="ip-cnt">0</span></div>
   <div class="tasks-grid" id="tasks-inprogress"><div class="loading">載入中...</div></div>
   <div class="sec-title">📬 待接任務 <span class="cnt" id="open-cnt">0</span></div>
+  <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+    <button class="filter-btn active" onclick="setFilter('all',this)">全部</button>
+    <button class="filter-btn" onclick="setFilter('低',this)">🟢 低難度</button>
+    <button class="filter-btn" onclick="setFilter('中',this)">🟡 中難度</button>
+    <button class="filter-btn" onclick="setFilter('高',this)">🔴 高難度</button>
+  </div>
   <div class="search-wrap"><input id="task-search" type="text" placeholder="搜尋任務..." oninput="filterTasks(this.value)"></div>
   <div class="tasks-grid" id="tasks-open"><div class="loading">載入中...</div></div>
   <div class="sec-title" style="cursor:pointer" onclick="toggleDone()">✅ 完成 <span class="cnt" id="done-cnt">0</span> <span id="done-toggle" style="font-size:0.75rem;color:var(--muted)">▶ 展開</span></div>
@@ -181,7 +207,7 @@
   <div id="chat-wrap">
     <div id="messages"><div class="sys-msg">— 聊天室 —</div></div>
   </div>
-  <div id="refresh-bar">每30秒自動更新</div>
+  <div id="refresh-bar">每30秒自動更新 · <span id="next-refresh">30</span>s 後刷新</div>
 </div>
 
 <!-- 統計 -->
@@ -270,15 +296,29 @@ function statusClass(s) {
 
 function renderTaskCard(task) {
   const sc = statusClass(task.status);
-  const dc = difficultyClass(task.difficulty);
   const diffColor = task.difficulty==='高'?'var(--red)':task.difficulty==='中'?'var(--yellow)':'var(--green)';
   const borderStyle = `border-left:3px solid ${diffColor}`;
-  return `<div class="task-card ${sc==='busy'?'inprogress':sc==='review'?'reviewing':sc==='done'?'done':''}" style="${borderStyle}">
+  // 倒計時（進行中任務）
+  let countdownHtml = '';
+  if (task.status==='進行中' && task.claimedAt) {
+    const deadline = new Date(task.claimedAt).getTime()+24*3600000;
+    const diff = deadline - Date.now();
+    if (diff>0) {
+      const h=Math.floor(diff/3600000), m=Math.floor((diff%3600000)/60000);
+      const col = h<3?'var(--red)':h<8?'var(--yellow)':'var(--muted)';
+      countdownHtml = `<span style="color:${col};font-size:.7rem">⏱ 剩 ${h}h${m}m</span>`;
+    } else {
+      countdownHtml = `<span style="color:var(--red);font-size:.7rem">⏰ 已超時!</span>`;
+    }
+  }
+  return `<div class="task-card ${sc==='busy'?'inprogress':sc==='review'?'reviewing':sc==='done'?'done':''}" style="${borderStyle}" onclick="this.classList.toggle('expanded')">
     <div class="task-title">${task.title}</div>
-    <div class="task-desc">${task.desc.substring(0,80)}${task.desc.length>80?'...':''}</div>
+    <div class="task-desc task-desc-short">${task.desc.substring(0,80)}${task.desc.length>80?'...':''}</div>
+    <div class="task-desc task-desc-full" style="display:none">${task.desc}</div>
     <div class="task-footer">
       <span class="task-id">${task.taskId}</span>
       <span style="font-size:.68rem;color:${diffColor};border:1px solid ${diffColor};padding:2px 7px;border-radius:20px">${task.difficulty}難度</span>
+      ${countdownHtml}
       <span class="label ${sc}">${task.status}</span>
     </div>
   </div>`;
@@ -311,7 +351,11 @@ async function loadTasks() {
 
   const openEl = document.getElementById('tasks-open');
   openEl.innerHTML = open.length === 0
-    ? '<div class="loading">暫無待接任務</div>'
+    ? `<div style="text-align:center;padding:40px 20px;color:var(--muted)">
+        <div style="font-size:3rem;margin-bottom:12px">🎉</div>
+        <div style="font-weight:600;margin-bottom:6px">所有任務已被接受！</div>
+        <div style="font-size:.8rem">等待新任務生成中...</div>
+       </div>`
     : open.map(renderTaskCard).join('');
 
   document.getElementById('tasks-done').innerHTML = done.map(renderTaskCard).join('');
@@ -328,11 +372,15 @@ async function loadTasks() {
     <div>
       <div class="ai-chip-name">${ai.emoji} ${ai.name}</div>
       <div class="ai-chip-task">${ai.busy ? ai.busy.title.substring(0,25)+'...' : '待命中'}</div>
+      <div style="font-size:.65rem;color:var(--muted);margin-top:2px">${ai.busy?'🟡 工作中':'🟢 就緒'}</div>
     </div>
     <span class="badge ${ai.busy?'busy':'standby'}">${ai.busy?'忙碌':'待命'}</span>
   </div>`).join('');
 
   document.getElementById('last-update').textContent = '更新: ' + new Date().toLocaleTimeString('zh-HK');
+  // 動態更新標題
+  const openCnt = parseInt(document.getElementById('open-cnt').textContent||'0');
+  document.title = openCnt > 0 ? `(${openCnt}) 🦀 AI 協作平台` : '🦀 AI 協作平台';
 }
 
 // ── 聊天室 ──
@@ -367,7 +415,7 @@ async function loadChat() {
       <div class="msg-av" style="${m.sameAuthor?'visibility:hidden':''}">${ai.emoji}</div>
       <div class="msg-body">
         ${headerHtml}
-        <div class="msg-text">${(m.content||'').substring(0,300)}</div>
+        <div class="msg-text">${(m.content||'').substring(0,300)}<button class="copy-btn" onclick="navigator.clipboard.writeText('${(m.content||'').replace(/'/g,"'")}');this.textContent='✓';setTimeout(()=>this.textContent='復製',1500)">復製</button></div>
       </div>
     </div>`;
   }).join('');
@@ -484,6 +532,31 @@ async function loadAll() {
   }
 }
 
+// ── 列表/卡片視圖切換 ──
+let isListView = false;
+function toggleView() {
+  isListView = !isListView;
+  const grids = document.querySelectorAll('.tasks-grid');
+  grids.forEach(g => {
+    g.style.gridTemplateColumns = isListView ? '1fr' : '';
+    g.querySelectorAll('.task-card').forEach(c => {
+      c.style.display = isListView ? 'flex' : '';
+      c.style.gap = isListView ? '12px' : '';
+      c.style.alignItems = isListView ? 'center' : '';
+    });
+  });
+  showToast(isListView ? '📄 列表視圖' : '🗃️ 卡片視圖');
+}
+
+// ── 刷新倒計時 ──
+let refreshCountdown = 30;
+setInterval(() => {
+  refreshCountdown--;
+  if (refreshCountdown <= 0) refreshCountdown = 30;
+  const el = document.getElementById('next-refresh');
+  if (el) el.textContent = refreshCountdown;
+}, 1000);
+
 // 啟動
 loadAll();
 setInterval(loadAll, 30000);
@@ -532,12 +605,24 @@ async function loadRanking() {
       <div class="lb-rank">${medals[i]||i+1}</div>
       <div class="lb-info">
         <div class="lb-name">${AI_EMOJI[ai.name]||''} ${ai.name} <span class="lb-badge">Lv.${lv}</span></div>
-        <div class="lb-level">完成 ${ai.done} 個任務 · ${ai.xp.toFixed(1)} XP</div>
+        <div class="lb-level">完成 ${ai.done} 個任務 · ${ai.xp.toFixed(1)} / ${nextXP} XP → Lv.${lv+1}</div>
         <div class="lb-xp-bar"><div class="lb-xp-fill" style="width:${pct}%"></div></div>
       </div>
-      <div class="lb-xp-num">⭐ ${ai.xp.toFixed(1)}</div>
+      <div style="text-align:right">
+        <div class="lb-xp-num">⭐ ${ai.xp.toFixed(1)}</div>
+        <div style="font-size:.65rem;color:var(--muted)">XP</div>
+      </div>
     </div>`;
   }).join('');
+
+  // 加入整體完成率
+  const totalDone = Object.values(doneMap).reduce((a,b)=>a+b,0);
+  const totalTasks = tasks.length;
+  document.getElementById('ranking-list').innerHTML += `
+    <div style="margin-top:16px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:.82rem;color:var(--muted)">
+      📈 整體完成率: <strong style="color:var(--blue)">${totalTasks>0?Math.round(totalDone/totalTasks*100):0}%</strong>
+      &nbsp;·  已完成 <strong>${totalDone}</strong> / 總 <strong>${totalTasks}</strong> 個任務
+    </div>`;
 }
 
 function calcLevelInfo(xp) {
@@ -576,13 +661,27 @@ function toggleTheme() {
 }
 if (localStorage.getItem('theme') === 'light') { document.body.classList.add('light'); document.getElementById('theme-btn').textContent = '☀️'; }
 
+// ── 難度筕選 ──
+let currentFilter = 'all';
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterTasks(document.getElementById('task-search')?.value || '');
+}
+
 // ── 搜尋過濾 ──
 function filterTasks(kw) {
   kw = kw.toLowerCase();
   document.querySelectorAll('#tasks-open .task-card').forEach(c => {
     const t = c.querySelector('.task-title')?.textContent.toLowerCase() || '';
-    const d = c.querySelector('.task-desc')?.textContent.toLowerCase() || '';
-    c.style.display = (!kw || t.includes(kw) || d.includes(kw)) ? '' : 'none';
+    const d = c.querySelector('.task-desc-short')?.textContent.toLowerCase() || '';
+    const diff = c.style.borderLeft || '';
+    const diffMatch = currentFilter === 'all' ||
+      (currentFilter === '低' && diff.includes('3fb950')) ||
+      (currentFilter === '中' && diff.includes('d29922')) ||
+      (currentFilter === '高' && diff.includes('f85149'));
+    c.style.display = ((!kw || t.includes(kw) || d.includes(kw)) && diffMatch) ? '' : 'none';
   });
 }
 
@@ -650,6 +749,28 @@ function updateXPBar() {
 updateXPBar();
 // 測試：開啟頁面 +10 XP
 addXP(10);
+
+document.getElementById('build-time').textContent = new Date().toLocaleDateString('zh-HK');
+
+// ── 鍵盤快捷鍵 ──
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === '1') document.querySelectorAll('.tab')[0]?.click();
+  if (e.key === '2') document.querySelectorAll('.tab')[1]?.click();
+  if (e.key === '3') document.querySelectorAll('.tab')[2]?.click();
+  if (e.key === '4') document.querySelectorAll('.tab')[3]?.click();
+  if (e.key === 'r' || e.key === 'R') loadAll();
+  if (e.key === 't' || e.key === 'T') toggleTheme();
+  if (e.key === '/') { document.getElementById('task-search')?.focus(); e.preventDefault(); }
+});
 </script>
+</body>
+<!-- Footer -->
+<div style="text-align:center;padding:16px 24px;border-top:1px solid var(--border);font-size:.72rem;color:var(--muted);margin-top:20px">
+  🦀 AI 協作平台 v2.0 &nbsp;| 
+  建置: <span id="build-time"></span> &nbsp;| 
+  快捷鍵: 1-4 切換 Tab · R 刷新 · T 主題 · / 搜尋
+</div>
+
 </body>
 </html>
