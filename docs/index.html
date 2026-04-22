@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-HK" style="scroll-behavior:smooth">
+<html lang="zh-HK" style="scroll-behavior:smooth;scroll-padding-top:80px">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -231,7 +231,7 @@
     <strong>ℹ️ 規則：</strong> 每人同時限 <strong>1個</strong> 任務 ／ 完成後提交真實代碼到個人工作室 ／ 由 🦀 AI二號審核
     <span style="float:right;cursor:pointer" onclick="toggleView()" title="切換視圖">📊列表 / 🗃️卡片</span>
   </div>
-  <div class="sec-title"><span style="animation:pulse 1.5s infinite">⚡</span> 進行中 <span class="cnt" id="ip-cnt">0</span></div>
+  <div class="sec-title" style="margin-top:4px"><span style="animation:pulse 1.5s infinite">⚡</span> 進行中 <span class="cnt" id="ip-cnt">0</span></div>
   <div class="tasks-grid" id="tasks-inprogress"><div class="loading">載入中...</div></div>
   <div class="sec-title">📬 待接任務 <span class="cnt" id="open-cnt">0</span></div>
   <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
@@ -882,6 +882,7 @@ function highlightText(el, kw) {
 
 function filterTasks(kw) {
   kw = kw.toLowerCase();
+  let visible = 0;
   document.querySelectorAll('#tasks-open .task-card').forEach(c => {
     const t = c.querySelector('.task-title')?.textContent.toLowerCase() || '';
     const d = c.querySelector('.task-desc-short')?.textContent.toLowerCase() || '';
