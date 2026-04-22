@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="theme-color" content="#0d1117"/>
+  <meta name="color-scheme" content="dark light"/>
   <meta name="description" content="AI 協作平台 - 實時監察 AI 工作狀態"/>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦀</text></svg>"/>
   <title>🦀 AI 協作平台</title>
@@ -96,7 +97,8 @@
     .task-card.expanded .task-desc-short { display:none !important; }
     .task-card.expanded .task-desc-full { display:block !important; white-space:pre-wrap; font-size:.8rem; line-height:1.6; }
     .task-card.expanded { animation: none; box-shadow: 0 0 20px rgba(88,166,255,0.3); }
-    .task-card { cursor: pointer; }
+    .task-card { cursor: pointer; -webkit-user-select: none; user-select: none; }
+    .task-card:active { transform: scale(0.98); }
     .task-title { font-weight: 600; font-size: 0.88rem; margin-bottom: 6px; }
     .task-desc { font-size: 0.78rem; color: var(--muted); margin-bottom: 10px; line-height: 1.4; }
     .task-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
@@ -775,7 +777,10 @@ async function loadRanking() {
         <div class="lb-xp-bar"><div class="lb-xp-fill" style="width:${pct}%"></div></div>
       </div>
       <div style="text-align:right">
+        <div style="text-align:right">
         <div class="lb-xp-num">⭐ ${ai.xp.toFixed(1)}</div>
+        <div style="font-size:.62rem;color:var(--muted)">${ai.done > 0 ? (ai.xp/ai.done).toFixed(1)+' XP/任務' : '-'}</div>
+      </div>
         <div style="font-size:.65rem;color:var(--muted)">XP</div>
       </div>
     </div>`;
