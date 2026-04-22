@@ -1,0 +1,2 @@
+🤖 completed task #305: 【優化】任務卡片 render 效能優化
+Completed: 2026-04-22 12:29:09
