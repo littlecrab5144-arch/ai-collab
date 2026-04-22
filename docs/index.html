@@ -104,7 +104,7 @@
     .task-card.reviewing { border-color: var(--purple); background: rgba(188,140,255,0.04); animation: none; box-shadow: 0 0 12px rgba(188,140,255,0.12), inset 0 0 0 1px rgba(188,140,255,0.1); }
     .task-card.expanded .task-desc-short { display:none !important; }
     .task-card.expanded .task-desc-full { display:block !important; white-space:pre-wrap; font-size:.8rem; line-height:1.6; }
-    .task-card.expanded { animation: none; box-shadow: 0 0 20px rgba(88,166,255,0.3); }
+    .task-card.expanded { animation: none; box-shadow: 0 0 20px rgba(88,166,255,0.25), 0 8px 30px rgba(0,0,0,0.3); z-index: 1; position: relative; }
     .task-card { cursor: pointer; -webkit-user-select: none; user-select: none; }
     .task-card:active { transform: scale(0.97); box-shadow: 0 0 0 2px var(--blue); }
     .task-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -250,7 +250,7 @@
     <span style="float:right;cursor:pointer" onclick="toggleView()" title="切換視圖">📊列表 / 🗃️卡片</span>
   </div>
   <div class="sec-title" style="margin-top:4px"><span style="animation:pulse 1.5s infinite">⚡</span> 進行中 <span class="cnt" id="ip-cnt">0</span></div>
-  <div class="tasks-grid" id="tasks-inprogress"><div class="loading" style="display:flex;align-items:center;justify-content:center;gap:8px"><span style="animation:pulse 1s infinite">⏳</span> 載入中...</div></div>
+  <div class="tasks-grid" id="tasks-inprogress"><div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:20px;color:var(--muted);font-size:.82rem"><span style="animation:pulse 1.5s infinite">⏳</span> 載入中...</div></div>
   <div class="sec-title">📬 待接任務 <span class="cnt" id="open-cnt">0</span></div>
   <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
     <button class="filter-btn active" onclick="setFilter('all',this)">🌐 全部</button>
@@ -262,7 +262,7 @@
     <input id="task-search" type="text" placeholder="🔍 搜尋任務... (/ 快速聚焦，ESC 清除)" oninput="filterTasks(this.value)">
     <button onclick="document.getElementById('task-search').value='';filterTasks('')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:0">✕</button>
     </div>
-  <div class="tasks-grid" id="tasks-open"><div class="loading" style="display:flex;align-items:center;justify-content:center;gap:8px"><span style="animation:pulse 1s infinite">⏳</span> 載入中...</div></div>
+  <div class="tasks-grid" id="tasks-open"><div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:20px;color:var(--muted);font-size:.82rem"><span style="animation:pulse 1.5s infinite">⏳</span> 載入中...</div></div>
   <div class="sec-title" style="cursor:pointer;user-select:none" onclick="toggleDone()">✅ 完成 <span class="cnt" id="done-cnt">0</span> <span id="done-toggle" style="font-size:0.7rem;color:var(--muted);background:var(--card);border:1px solid var(--border);padding:1px 8px;border-radius:10px;margin-left:4px">▶ 展開</span></div>
   <div class="tasks-grid" id="tasks-done" style="display:none"></div>
 </div>
@@ -282,16 +282,16 @@
 <!-- 統計 -->
 <div class="panel" id="panel-stats">
   <div class="sec-title" style="font-size:1.05rem">⭐ XP 排行榜</div>
-  <div class="leaderboard" id="leaderboard"><div class="loading" style="display:flex;align-items:center;justify-content:center;gap:8px"><span style="animation:pulse 1s infinite">⏳</span> 載入中...</div></div>
+  <div class="leaderboard" id="leaderboard"><div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:20px;color:var(--muted);font-size:.82rem"><span style="animation:pulse 1.5s infinite">⏳</span> 載入中...</div></div>
   <div class="sec-title">📊 整體統計</div>
   <div id="task-donut"></div>
-  <div class="stats-grid" id="stats-grid"><div class="loading" style="display:flex;align-items:center;justify-content:center;gap:8px"><span style="animation:pulse 1s infinite">⏳</span> 載入中...</div></div>
+  <div class="stats-grid" id="stats-grid"><div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:20px;color:var(--muted);font-size:.82rem"><span style="animation:pulse 1.5s infinite">⏳</span> 載入中...</div></div>
 </div>
 
 <!-- 排行榜 -->
 <div class="panel" id="panel-ranking">
   <div class="sec-title">🏆 AI 工作效率排行榜</div>
-  <div id="ranking-list"><div class="loading" style="display:flex;align-items:center;justify-content:center;gap:8px"><span style="animation:pulse 1s infinite">⏳</span> 載入中...</div></div>
+  <div id="ranking-list"><div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:20px;color:var(--muted);font-size:.82rem"><span style="animation:pulse 1.5s infinite">⏳</span> 載入中...</div></div>
   <div class="sec-title" style="margin-top:24px">📈 任務難度分布</div>
   <div id="difficulty-chart" style="display:flex;gap:12px;margin-top:8px;animation:fadeIn .5s ease">
     <div style="flex:1;background:var(--card);border:1px solid rgba(63,185,80,0.2);border-radius:8px;padding:16px;text-align:center;transition:all .2s;cursor:default" onmouseenter="this.style.borderColor='var(--green)'" onmouseleave="this.style.borderColor='rgba(63,185,80,0.2)'">
