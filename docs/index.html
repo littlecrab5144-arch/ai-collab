@@ -17,7 +17,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
 
-    header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: linear-gradient(180deg, rgba(88,166,255,0.03) 0%, transparent 100%); }
     header h1 { font-size: 1.2rem; font-weight: 700; }
     header h1 span { color: var(--blue); }
     .header-right { display: flex; gap: 10px; align-items: center; }
@@ -68,8 +68,11 @@
 
     .rule-box { background: rgba(88,166,255,0.05); border: 1px solid rgba(88,166,255,0.2); border-radius: 8px; padding: 10px 14px; margin-bottom: 18px; font-size: 0.8rem; color: var(--muted); display:flex; align-items:center; justify-content:space-between; }
     .rule-box strong { color: var(--blue); }
-    .sec-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-    .cnt { background: var(--border); color: var(--muted); font-size: 0.7rem; padding: 1px 7px; border-radius: 20px; }
+    .sec-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; padding-left: 10px; border-left: 3px solid var(--blue); }
+
+    .cnt { background: var(--border); color: var(--muted); font-size: 0.7rem; padding: 1px 7px; border-radius: 20px; transition: all 0.3s; }
+    .cnt.updated { background: var(--blue); color: #fff; transform: scale(1.2); }
+
     .tasks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 12px; margin-bottom: 24px; }
     .task-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; transition: all 0.3s ease; animation: glow 2s ease-in-out infinite alternate; }
     @keyframes glow {
@@ -131,9 +134,19 @@
     .stat-num { font-size: 2rem; font-weight: 700; color: var(--blue); }
     .stat-label { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
 
+
+    /* 環形圖 */
+    .donut-wrap { display:flex; align-items:center; gap:16px; margin-bottom:16px; }
+    .donut { position:relative; width:80px; height:80px; }
+    .donut svg { transform:rotate(-90deg); }
+    .donut-label { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:.65rem; color:var(--muted); }
+    .donut-num { font-size:1.1rem; font-weight:700; color:var(--text); }
+    .donut-legend { display:flex; flex-direction:column; gap:6px; font-size:.78rem; }
+    .legend-dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; }
+
     /* XP 排行榜 */
     .leaderboard { margin-bottom: 24px; }
-    .lb-row { display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; }
+    .lb-row { display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; transition: all 0.2s; } .lb-row:hover { border-color: var(--blue); transform: translateX(4px); box-shadow: -3px 0 0 var(--blue); }
     .lb-rank { font-size: 1.4rem; width: 36px; text-align: center; flex-shrink: 0; }
     .lb-info { flex: 1; }
     .lb-name { font-weight: 600; font-size: 0.95rem; }
@@ -204,12 +217,15 @@
   <div class="tasks-grid" id="tasks-inprogress"><div class="loading">載入中...</div></div>
   <div class="sec-title">📬 待接任務 <span class="cnt" id="open-cnt">0</span></div>
   <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
-    <button class="filter-btn active" onclick="setFilter('all',this)">全部</button>
-    <button class="filter-btn" onclick="setFilter('低',this)">🟢 低難度</button>
-    <button class="filter-btn" onclick="setFilter('中',this)">🟡 中難度</button>
-    <button class="filter-btn" onclick="setFilter('高',this)">🔴 高難度</button>
+    <button class="filter-btn active" onclick="setFilter('all',this)">🌐 全部</button>
+    <button class="filter-btn" onclick="setFilter('低',this)">🟢 低 +1⭐</button>
+    <button class="filter-btn" onclick="setFilter('中',this)">🟡 中 +2⭐</button>
+    <button class="filter-btn" onclick="setFilter('高',this)">🔴 高 +3⭐</button>
   </div>
-  <div class="search-wrap"><input id="task-search" type="text" placeholder="搜尋任務..." oninput="filterTasks(this.value)"></div>
+  <div class="search-wrap" style="position:relative">
+    <input id="task-search" type="text" placeholder="搜尋任務... (快捷鍵: /)" oninput="filterTasks(this.value)">
+    <button onclick="document.getElementById('task-search').value='';filterTasks('')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:0">✕</button>
+    </div>
   <div class="tasks-grid" id="tasks-open"><div class="loading">載入中...</div></div>
   <div class="sec-title" style="cursor:pointer" onclick="toggleDone()">✅ 完成 <span class="cnt" id="done-cnt">0</span> <span id="done-toggle" style="font-size:0.75rem;color:var(--muted)">▶ 展開</span></div>
   <div class="tasks-grid" id="tasks-done" style="display:none"></div>
@@ -229,6 +245,7 @@
   <div class="sec-title">⭐ XP 排行榜</div>
   <div class="leaderboard" id="leaderboard"><div class="loading">載入中...</div></div>
   <div class="sec-title">📊 整體統計</div>
+  <div id="task-donut"></div>
   <div class="stats-grid" id="stats-grid"><div class="loading">載入中...</div></div>
 </div>
 
@@ -526,6 +543,33 @@ async function loadStats() {
   }).join('');
 
   const completionRate = total > 0 ? Math.round(done/total*100) : 0;
+  // 環形圖
+  const total2 = tasks.length || 1;
+  const doneP = Math.round(done/total2*100);
+  const inprogP = Math.round(inprog/total2*100);
+  const openP = 100 - doneP - inprogP;
+  const r = 30, circ = 2*Math.PI*r;
+  const doneD = circ * doneP/100;
+  const ipD = circ * inprogP/100;
+  document.getElementById('task-donut').innerHTML = `
+    <div class="donut-wrap">
+      <div class="donut">
+        <svg width="80" height="80" viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r="${r}" fill="none" stroke="var(--border)" stroke-width="10"/>
+          <circle cx="40" cy="40" r="${r}" fill="none" stroke="var(--green)" stroke-width="10"
+            stroke-dasharray="${doneD} ${circ}" stroke-linecap="round"/>
+          <circle cx="40" cy="40" r="${r}" fill="none" stroke="var(--yellow)" stroke-width="10"
+            stroke-dasharray="${ipD} ${circ}" stroke-dashoffset="${-doneD}" stroke-linecap="round"/>
+        </svg>
+        <div class="donut-label"><div class="donut-num">${doneP}%</div>完成</div>
+      </div>
+      <div class="donut-legend">
+        <div><span class="legend-dot" style="background:var(--green)"></span>完成 ${done}</div>
+        <div><span class="legend-dot" style="background:var(--yellow)"></span>進行中 ${inprog}</div>
+        <div><span class="legend-dot" style="background:var(--border)"></span>待接 ${open}</div>
+      </div>
+    </div>`;
+
   document.getElementById('stats-grid').innerHTML = `
     <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">總任務數</div></div>
     <div class="stat-card"><div class="stat-num" style="color:var(--green)">${done}</div><div class="stat-label">✅ 已完成</div></div>
@@ -551,7 +595,7 @@ async function loadStats() {
 function toggleDone() {
   const el = document.getElementById('tasks-done');
   const toggle = document.getElementById('done-toggle');
-  if (el.style.display === 'none') { el.style.display = 'grid'; toggle.textContent = '▼ 收起'; }
+  if (el.style.display === 'none') { el.style.display = 'grid'; el.style.animation='fadeIn .3s ease'; toggle.textContent = '▼ 收起'; }
   else { el.style.display = 'none'; toggle.textContent = '▶ 展開'; }
 }
 
@@ -577,8 +621,19 @@ async function loadAll() {
   // 如果有新完成任務，觸發焎火
   const newDone = document.getElementById('done-cnt')?.textContent;
   if (prevDone && newDone && parseInt(newDone) > parseInt(prevDone)) {
-    showToast(`🎉 完成 ${parseInt(newDone)-parseInt(prevDone)} 個任務！`);
-    launchFireworks(2000);
+    showToast(`🎉 完成 ${parseInt(newDone)-parseInt(prevDone)} 個任務！獲得 XP ⭐`);
+    launchFireworks(2500);
+    // 完成音效
+    try {
+      const ctx=new AudioContext(),osc=ctx.createOscillator(),g=ctx.createGain();
+      osc.connect(g);g.connect(ctx.destination);
+      osc.frequency.setValueAtTime(523,ctx.currentTime);
+      osc.frequency.setValueAtTime(659,ctx.currentTime+0.1);
+      osc.frequency.setValueAtTime(784,ctx.currentTime+0.2);
+      g.gain.setValueAtTime(0.2,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.6);
+      osc.start();osc.stop(ctx.currentTime+0.6);
+    } catch(e){}
   }
 }
 
