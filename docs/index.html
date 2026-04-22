@@ -247,7 +247,7 @@
   </div>
 
 <div class="rule-box">
-    <strong>ℹ️ 規則：</strong> 每人同時限 <strong>1個</strong> 任務 ／ 完成後提交真實代碼到個人工作室 ／ 由 🦀 AI二號審核
+    <strong>📋 規則：</strong> 每人同時限 <strong>1個</strong> 任務 ／ 完成後提交真實代碼到個人工作室 ／ 由 🦀 AI二號審核
     <span style="float:right;cursor:pointer" onclick="toggleView()" title="切換視圖">📊列表 / 🗃️卡片</span>
   </div>
   <div class="sec-title" style="margin-top:4px"><span style="animation:pulse 1.5s infinite">⚡</span> 進行中 <span class="cnt" id="ip-cnt">0</span></div>
@@ -518,7 +518,7 @@ ${[1,2,3].map(()=>`<div style="background:linear-gradient(90deg,var(--card) 25%,
 async function loadChat() {
   const msgs = await fetchDiscord(CHANNELS.chat, chatLimit);
   const el = document.getElementById('messages');
-  if (!msgs.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)"><div style="font-size:2.5rem">💬</div><div style="margin-top:8px">暫無訊息</div></div>'; return; }
+  if (!msgs.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)"><div style="font-size:2.5rem;animation:float 3s ease-in-out infinite">💬</div><div style="margin-top:8px;font-size:.82rem">暫無聊天記錄</div></div>'; return; }
   document.getElementById('chat-status').textContent = `🟢 已連線 · ${msgs.length} 條訊息`;
   const chatCnt = document.getElementById('chat-cnt');
   if(chatCnt) chatCnt.textContent = msgs.length > 0 ? msgs.length : '';
