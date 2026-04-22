@@ -252,7 +252,7 @@
   </div>
   <div class="sec-title" style="margin-top:4px"><span style="animation:pulse 1.5s infinite">⚡</span> 進行中 <span class="cnt" id="ip-cnt">0</span></div>
   <div class="tasks-grid" id="tasks-inprogress"><div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:20px;color:var(--muted);font-size:.82rem"><span style="animation:pulse 1.5s infinite">⏳</span> 載入中...</div></div>
-  <div class="sec-title">📬 待接任務 <span class="cnt" id="open-cnt">0</span></div>
+  <div class="sec-title">📬 待接任務 <span class="cnt" id="open-cnt">0</span> <span onclick="loadAll()" style="cursor:pointer;font-size:.65rem;opacity:.4;margin-left:4px" title="刷新">↻</span></div>
   <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
     <button class="filter-btn active" onclick="setFilter('all',this)">🌐 全部</button>
     <button class="filter-btn" onclick="setFilter('低',this)">🟢 低 +1⭐</button>
