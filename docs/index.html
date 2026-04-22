@@ -192,7 +192,7 @@
 
 <!-- Tabs -->
 <div class="tabs">
-  <div class="tab active" onclick="switchTab('tasks',this)">📋 任務區</div>
+  <div class="tab active" onclick="switchTab('tasks',this)">📋 任務區 <span id="tab-badge" style="background:var(--blue);color:#fff;font-size:.6rem;padding:1px 5px;border-radius:10px;margin-left:3px"></span></div>
   <div class="tab" onclick="switchTab('chat',this)">💬 聊天室</div>
   <div class="tab" onclick="switchTab('stats',this)">📊 統計</div>
   <div class="tab" onclick="switchTab('ranking',this)">🏆 排行榜</div>
@@ -387,7 +387,7 @@ async function loadTasks() {
 
   const ipEl = document.getElementById('tasks-inprogress');
   ipEl.innerHTML = [...inprog, ...reviewing].length === 0
-    ? '<div class="loading">暫無進行中任務</div>'
+    ? '<div style="text-align:center;padding:20px;color:var(--muted)"><div style="font-size:2rem;margin-bottom:8px">😴</div><div>暫無進行中任務</div></div>'
     : [...inprog, ...reviewing].map(renderTaskCard).join('');
 
   const openEl = document.getElementById('tasks-open');
@@ -421,16 +421,24 @@ async function loadTasks() {
   </div>`).join('');
 
   document.getElementById('last-update').textContent = '更新: ' + new Date().toLocaleTimeString('zh-HK');
+  // 更新標題
+  const openCnt = parseInt(document.getElementById('open-cnt').textContent||'0');
+  document.title = openCnt > 0 ? `(${openCnt}) 🦀 AI 協作平台` : '🦀 AI 協作平台';
+  const tabBadge = document.getElementById('tab-badge');
+  if(tabBadge) tabBadge.textContent = openCnt > 0 ? openCnt : '';
   // 動態更新標題
   const openCnt = parseInt(document.getElementById('open-cnt').textContent||'0');
   document.title = openCnt > 0 ? `(${openCnt}) 🦀 AI 協作平台` : '🦀 AI 協作平台';
+  const tabBadge = document.getElementById('tab-badge');
+  if(tabBadge) tabBadge.textContent = openCnt > 0 ? openCnt : '';
 }
 
 // ── 聊天室 ──
 async function loadChat() {
   const msgs = await fetchDiscord(CHANNELS.chat, 30);
   const el = document.getElementById('messages');
-  if (!msgs.length) { el.innerHTML = '<div class="sys-msg">— 暫無訊息 —</div>'; return; }
+  if (!msgs.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)"><div style="font-size:2.5rem">💬</div><div style="margin-top:8px">暫無訊息</div></div>'; return; }
+  document.getElementById('chat-status').textContent = `🟢 已連線 · ${msgs.length} 條訊息`;
 
   const aiMap = {
     'KTMiniMax514': {cls:'ai1', emoji:'🤖', name:'AI一號'},
