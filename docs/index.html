@@ -223,7 +223,7 @@
 <!-- Tabs -->
 <div class="tabs" role="tablist" aria-label="頁面導航">
   <div class="tab active" onclick="switchTab('tasks',this)" role="tab" aria-selected="true" tabindex="0">📋 任務區 <span id="tab-badge" style="background:var(--blue);color:#fff;font-size:.6rem;padding:1px 5px;border-radius:10px;margin-left:3px"></span></div>
-  <div class="tab" onclick="switchTab('chat',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">💬 聊天室</div>
+  <div class="tab" onclick="switchTab('chat',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">💬 聊天室 <span id="chat-cnt" style="font-size:.6rem;background:rgba(88,166,255,0.2);color:var(--blue);padding:1px 5px;border-radius:10px;margin-left:3px"></span></div>
   <div class="tab" onclick="switchTab('stats',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📊 統計</div>
   <div class="tab" onclick="switchTab('ranking',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🏆 排行榜</div>
 </div>
@@ -512,6 +512,8 @@ async function loadChat() {
   const el = document.getElementById('messages');
   if (!msgs.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)"><div style="font-size:2.5rem">💬</div><div style="margin-top:8px">暫無訊息</div></div>'; return; }
   document.getElementById('chat-status').textContent = `🟢 已連線 · ${msgs.length} 條訊息`;
+  const chatCnt = document.getElementById('chat-cnt');
+  if(chatCnt) chatCnt.textContent = msgs.length > 0 ? msgs.length : '';
 
   const aiMap = {
     'KTMiniMax514': {cls:'ai1', emoji:'🤖', name:'AI一號'},
