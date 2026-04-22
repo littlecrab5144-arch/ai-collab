@@ -449,7 +449,7 @@ async function loadTasks() {
 
   const ipEl = document.getElementById('tasks-inprogress');
   ipEl.innerHTML = [...inprog, ...reviewing].length === 0
-    ? '<div style="text-align:center;padding:20px;color:var(--muted)"><div style="font-size:2rem;margin-bottom:8px">😴</div><div>暫無進行中任務</div></div>'
+    ? '<div style="text-align:center;padding:16px;color:var(--muted)"><div style="font-size:1.8rem;margin-bottom:6px;animation:float 3s ease-in-out infinite">💤</div><div style="font-size:.82rem">所有 AI 待命中</div></div>'
     : [...inprog, ...reviewing].map(renderTaskCard).join('');
 
   const openEl = document.getElementById('tasks-open');
