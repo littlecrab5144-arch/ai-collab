@@ -210,7 +210,7 @@
 
 <!-- 任務區 -->
 <div class="panel active" id="panel-tasks">
-  <div id="announcement" style="display:none;background:rgba(210,153,34,0.1);border:1px solid rgba(210,153,34,0.3);border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:.82rem;color:var(--yellow)"></div>
+  <div id="announcement" style="display:none;background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.25);border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:.82rem;color:var(--yellow);animation:fadeIn .5s ease"></div>
 
   <!-- 快速統計條 -->
   <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
@@ -237,7 +237,7 @@
     <button onclick="document.getElementById('task-search').value='';filterTasks('')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:0">✕</button>
     </div>
   <div class="tasks-grid" id="tasks-open"><div class="loading">載入中...</div></div>
-  <div class="sec-title" style="cursor:pointer" onclick="toggleDone()">✅ 完成 <span class="cnt" id="done-cnt">0</span> <span id="done-toggle" style="font-size:0.75rem;color:var(--muted)">▶ 展開</span></div>
+  <div class="sec-title" style="cursor:pointer;user-select:none" onclick="toggleDone()">✅ 完成 <span class="cnt" id="done-cnt">0</span> <span id="done-toggle" style="font-size:0.7rem;color:var(--muted);background:var(--card);border:1px solid var(--border);padding:1px 8px;border-radius:10px;margin-left:4px">▶ 展開</span></div>
   <div class="tasks-grid" id="tasks-done" style="display:none"></div>
 </div>
 
@@ -420,7 +420,10 @@ async function loadTasks() {
        </div>`
     : sortedOpen.map(renderTaskCard).join('');
 
-  document.getElementById('tasks-done').innerHTML = done.map(renderTaskCard).join('');
+  document.getElementById('tasks-done').innerHTML = done.length === 0 
+    ? '' 
+    : done.slice(0,10).map(renderTaskCard).join('') + 
+      (done.length > 10 ? `<div style="text-align:center;color:var(--muted);font-size:.78rem;padding:8px">... 還有 ${done.length-10} 個完成任務</div>` : '');
 
   // AI 狀態列
   const ai1busy = inprog.find(t => t.ai === 'AI一號');
@@ -812,6 +815,11 @@ function setFilter(f, btn) {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   filterTasks(document.getElementById('task-search')?.value || '');
+  // 顯示過濾後數量
+  setTimeout(()=>{
+    const visible = [...document.querySelectorAll('#tasks-open .task-card')].filter(c=>c.style.display!=='none').length;
+    if(f!=='all') showToast(`🎯 ${visible} 個${f}難度任務`);
+  }, 50);
 }
 
 // ── 搜尋過濾 ──
