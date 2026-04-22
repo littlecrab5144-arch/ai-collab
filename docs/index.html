@@ -15,6 +15,7 @@
       --yellow: #d29922; --red: #f85149;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    ::selection { background: rgba(88,166,255,0.3); }
 
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -385,9 +386,9 @@ async function loadTasks() {
   const reviewing = tasks.filter(t => t.status === '審核中');
   const done = tasks.filter(t => t.status === '完成');
 
-  document.getElementById('ip-cnt').textContent = inprog.length + reviewing.length;
-  document.getElementById('open-cnt').textContent = open.length;
-  document.getElementById('done-cnt').textContent = done.length;
+  animateNumber(document.getElementById('ip-cnt'), inprog.length + reviewing.length);
+  animateNumber(document.getElementById('open-cnt'), open.length);
+  animateNumber(document.getElementById('done-cnt'), done.length);
   // 快速統計條
   const qsIp = document.getElementById('qs-ip');
   const qsOpen = document.getElementById('qs-open');
@@ -914,6 +915,20 @@ updateXPBar();
 addXP(10);
 
 document.getElementById('build-time').textContent = new Date().toLocaleDateString('zh-HK');
+
+
+function animateNumber(el, target) {
+  const start = parseInt(el.textContent) || 0;
+  const diff = target - start;
+  if(diff === 0) return;
+  const steps = 20;
+  let step = 0;
+  const timer = setInterval(() => {
+    step++;
+    el.textContent = Math.round(start + diff * (step/steps));
+    if(step >= steps) { clearInterval(timer); el.textContent = target; }
+  }, 30);
+}
 
 // ── 網絡狀態偵測 ──
 window.addEventListener('offline', () => showToast('⚠️ 網絡斷線！將自動重連...', 5000));
