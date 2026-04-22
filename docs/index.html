@@ -15,6 +15,12 @@
       --yellow: #d29922; --red: #f85149;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
     body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
 
     header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: linear-gradient(180deg, rgba(88,166,255,0.03) 0%, transparent 100%); }
@@ -156,6 +162,10 @@
     .lb-xp-num { font-size: 0.82rem; font-weight: 700; color: var(--yellow); white-space: nowrap; }
     .lb-badge { font-size: 0.68rem; padding: 2px 8px; border-radius: 20px; background: rgba(188,140,255,0.15); color: var(--purple); margin-left: 6px; }
 
+
+    @keyframes skeleton { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+    .skeleton { background:linear-gradient(90deg,var(--card) 25%,var(--card2,#1a2130) 50%,var(--card) 75%); background-size:200% 100%; animation:skeleton 1.5s infinite; border-radius:4px; }
+
     .loading { color: var(--muted); font-size: 0.82rem; padding: 20px 0; text-align: center; }
     #refresh-bar { font-size: 0.72rem; color: var(--muted); text-align: center; padding: 8px; }
 
@@ -173,7 +183,7 @@
 </head>
 <body>
 <header>
-  <h1>🦀 <span>AI 協作平台</span> <span id="sys-status" style="display:inline-block;width:8px;height:8px;background:var(--green);border-radius:50%;margin-left:6px;box-shadow:0 0 6px var(--green);animation:pulse 2s infinite" title="系統正常"></span></h1>
+  <h1>🦀 <span>AI 協作平台</span> <sup style="font-size:.55rem;color:var(--muted);vertical-align:super">v2.8</sup> <span id="sys-status" style="display:inline-block;width:8px;height:8px;background:var(--green);border-radius:50%;margin-left:6px;box-shadow:0 0 6px var(--green);animation:pulse 2s infinite" title="系統正常"></span></h1>
   <div class="header-right">
     <span id="last-update">載入中...</span>
     <button onclick="navigator.share?navigator.share({title:'AI協作平台',url:location.href}):navigator.clipboard.writeText(location.href).then(()=>showToast('🔗 連結已復製'))" style="background:var(--card);border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.85rem;" title="分享">🔗</button>
@@ -234,6 +244,7 @@
 <!-- 聊天室 -->
 <div class="panel" id="panel-chat">
   <div id="chat-wrap">
+    <button id="load-more-chat" onclick="loadMoreChat()" style="width:100%;background:none;border:1px solid var(--border);color:var(--muted);padding:6px;border-radius:6px;cursor:pointer;font-size:.78rem;margin-bottom:8px">📜 載入更多</button>
     <div id="messages"><div class="sys-msg">— 聊天室 —</div></div>
     <div id="chat-status" style="font-size:.72rem;color:var(--muted);text-align:center;padding:4px">🟢 已連線 · 每30秒更新</div>
   </div>
@@ -443,7 +454,7 @@ async function loadTasks() {
 
 // ── 聊天室 ──
 async function loadChat() {
-  const msgs = await fetchDiscord(CHANNELS.chat, 30);
+  const msgs = await fetchDiscord(CHANNELS.chat, chatLimit);
   const el = document.getElementById('messages');
   if (!msgs.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)"><div style="font-size:2.5rem">💬</div><div style="margin-top:8px">暫無訊息</div></div>'; return; }
   document.getElementById('chat-status').textContent = `🟢 已連線 · ${msgs.length} 條訊息`;
@@ -507,6 +518,13 @@ function calcLevel(xp) {
 
 function rankEmoji(i) {
   return i===0?'🥇':i===1?'🥈':i===2?'🥉':'  '+(i+1);
+}
+
+let chatLimit = 30;
+function loadMoreChat() {
+  chatLimit += 20;
+  loadChat();
+  showToast(`📜 載入 ${chatLimit} 條訊息`);
 }
 
 // ── 統計 ──
