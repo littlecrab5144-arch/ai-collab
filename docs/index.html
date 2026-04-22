@@ -33,7 +33,7 @@
     /* 搜尋框 */
     #task-search { width:100%; background:var(--card); border:1px solid var(--border); color:var(--text); padding:8px 12px 8px 32px; border-radius:6px; font-size:.85rem; margin-bottom:12px; outline:none; }
     #task-search:focus { border-color:var(--blue); }
-    .search-wrap { position:relative; }
+    .search-wrap { position:sticky; top:0; z-index:10; background:var(--bg); padding:8px 0 4px; }
     .search-wrap::before { content:'🔍'; position:absolute; left:10px; top:50%; transform:translateY(-60%); font-size:.8rem; pointer-events:none; }
 
     /* 深色/淡色主題 */
@@ -43,8 +43,8 @@
     #load-bar { position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--blue),var(--purple)); z-index:9999; transition:width .3s ease; width:0; border-radius:0 2px 2px 0; }
 
     /* 返回頂部按鈕 */
-    #back-top { position:fixed; bottom:24px; right:24px; background:var(--blue); color:#000; border:none; width:38px; height:38px; border-radius:50%; cursor:pointer; display:none; font-size:1.1rem; font-weight:700; box-shadow:0 2px 12px rgba(88,166,255,0.4); z-index:100; transition:all .2s; }
-    #back-top:hover { transform:scale(1.1); }
+    #back-top { position:fixed; bottom:24px; right:24px; background:linear-gradient(135deg,var(--blue),var(--purple)); color:#fff; border:none; width:40px; height:40px; border-radius:50%; cursor:pointer; display:none; font-size:1.1rem; font-weight:700; box-shadow:0 4px 15px rgba(88,166,255,0.4); z-index:100; transition:all .2s; align-items:center; justify-content:center; }
+    #back-top:hover { transform:scale(1.1) rotate(360deg); box-shadow:0 6px 25px rgba(88,166,255,0.6); }
 
     .ai-bar { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; padding: 14px 24px; border-bottom: 1px solid var(--border); }
     .ai-chip { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; transition: all 0.3s; }
@@ -61,7 +61,7 @@
     .tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 24px; }
     .tab { padding: 12px 18px; cursor: pointer; font-size: 0.88rem; color: var(--muted); border-bottom: 2px solid transparent; }
     .tab:hover { color: var(--text); }
-    .tab.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 600; }
+    .tab.active { color: var(--blue); border-bottom: 3px solid var(--blue); font-weight: 700; }
 
     .panel { display: none; padding: 20px 24px; }
     .panel.active { display: block; }
@@ -475,8 +475,9 @@ async function loadChat() {
     const headerHtml = m.sameAuthor ? '' : `<div class="msg-header"><span class="msg-name ${ai.cls}">${ai.name}</span><span class="msg-time">${time}</span></div>`;
     const dayDivider = m.newDay ? `<div class="sys-msg" style="margin:8px 0">── ${new Date(m.timestamp).toLocaleDateString('zh-HK')} ──</div>` : '';
     const attHtml = (m.attachments||[]).map(a=>`<div style="font-size:.75rem;color:var(--blue);margin-top:4px">📎 ${a.filename}</div>`).join('');
+    const msgUrl = `https://discord.com/channels/1495465034191470736/${CHANNELS.chat}/${m.id}`;
     return `${dayDivider}<div class="msg" style="${m.sameAuthor?'margin-top:-4px':''}">
-      <div class="msg-av" style="${m.sameAuthor?'visibility:hidden':''}">${ai.emoji}</div>
+      <div class="msg-av" style="${m.sameAuthor?'visibility:hidden':''}" title="點擊跳轉" onclick="window.open('${msgUrl}')" style="cursor:pointer">${ai.emoji}</div>
       <div class="msg-body">
         ${headerHtml}
         <div class="msg-text">${content}<button class="copy-btn" onclick="navigator.clipboard.writeText(this.previousSibling.textContent);this.textContent='✓';setTimeout(()=>this.textContent='復製',1500)">復製</button></div>
@@ -858,7 +859,7 @@ function showLevelUp(level) {
   for(let i=0;i<50;i++){const c=document.createElement('div');const colors=['#3fb950','#58a6ff','#bc8cff','#d29922','#f85149'];c.style.cssText=`position:fixed;top:-10px;left:${Math.random()*100}%;width:${5+Math.random()*8}px;height:${5+Math.random()*8}px;background:${colors[Math.floor(Math.random()*5)]};border-radius:${Math.random()>.5?'50%':'2px'};animation:confettiFall ${1.5+Math.random()*1.5}s ${Math.random()*.5}s ease-in forwards;z-index:10000;pointer-events:none`;document.body.appendChild(c);setTimeout(()=>c.remove(),3000);}
 }
 const xpStyle = document.createElement('style');
-xpStyle.textContent = `@keyframes xpFloat{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-40px)}}@keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}#xp-bar{position:fixed;bottom:0;left:0;right:0;height:4px;background:var(--border);z-index:500}#xp-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--purple));transition:width 0.5s ease}`;
+xpStyle.textContent = `@keyframes xpFloat{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-40px)}}@keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}#xp-bar{position:fixed;bottom:0;left:0;right:0;height:4px;background:rgba(0,0,0,0.3);z-index:500;backdrop-filter:blur(4px)}#xp-fill{height:100%;background:linear-gradient(90deg,#58a6ff,#bc8cff,#3fb950);background-size:200%;animation:xpShimmer 3s infinite;transition:width 0.5s ease}@keyframes xpShimmer{0%{background-position:0%}100%{background-position:200%}}`;
 document.head.appendChild(xpStyle);
 const xpBar = document.createElement('div');
 xpBar.id = 'xp-bar'; xpBar.innerHTML = '<div id="xp-fill"></div>';
