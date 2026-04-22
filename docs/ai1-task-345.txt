@@ -1,0 +1,2 @@
+🤖 completed task #345: 【UI】任務卡片加入預估時間顯示
+Completed: 2026-04-22 12:59:53
