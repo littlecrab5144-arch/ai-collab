@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-HK">
+<html lang="zh-HK" style="scroll-behavior:smooth">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -85,7 +85,7 @@
       0% { box-shadow: 0 0 5px rgba(210,153,34,0.3); }
       100% { box-shadow: 0 0 20px rgba(210,153,34,0.6); }
     }
-    .task-card.reviewing { border-color: var(--purple); }
+    .task-card.reviewing { border-color: var(--purple); background: rgba(188,140,255,0.03); animation: none; box-shadow: 0 0 15px rgba(188,140,255,0.15); }
     .task-card.expanded .task-desc-short { display:none !important; }
     .task-card.expanded .task-desc-full { display:block !important; }
     .task-card.expanded { animation: none; box-shadow: 0 0 20px rgba(88,166,255,0.3); }
@@ -104,7 +104,7 @@
     .task-id { font-size: 0.68rem; color: var(--muted); font-family: monospace; }
 
     /* Toast 通知 */
-    .toast { position:fixed; bottom:70px; left:50%; transform:translateX(-50%); background:var(--card); border:1px solid var(--border); color:var(--text); padding:10px 20px; border-radius:8px; font-size:.85rem; z-index:9999; animation:toastIn .3s ease; box-shadow:0 4px 20px rgba(0,0,0,.3); white-space:nowrap; }
+    .toast { position:fixed; bottom:70px; left:50%; transform:translateX(-50%); background:rgba(22,27,34,0.95); border:1px solid rgba(88,166,255,0.3); color:var(--text); padding:10px 20px; border-radius:20px; font-size:.85rem; z-index:9999; animation:toastIn .3s ease; box-shadow:0 4px 20px rgba(0,0,0,.5), 0 0 0 1px rgba(88,166,255,0.1); white-space:nowrap; backdrop-filter:blur(10px); }
     @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
     /* 打字動畫 */
@@ -173,7 +173,7 @@
 </head>
 <body>
 <header>
-  <h1>🦀 <span>AI 協作平台</span></h1>
+  <h1>🦀 <span>AI 協作平台</span> <span id="sys-status" style="display:inline-block;width:8px;height:8px;background:var(--green);border-radius:50%;margin-left:6px;box-shadow:0 0 6px var(--green);animation:pulse 2s infinite" title="系統正常"></span></h1>
   <div class="header-right">
     <span id="last-update">載入中...</span>
     <button onclick="navigator.share?navigator.share({title:'AI協作平台',url:location.href}):navigator.clipboard.writeText(location.href).then(()=>showToast('🔗 連結已復製'))" style="background:var(--card);border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.85rem;" title="分享">🔗</button>
@@ -210,7 +210,7 @@
   </div>
 
 <div class="rule-box">
-    <strong>規則：</strong> 每人同時限 <strong>1個</strong> 任務 ／ 完成後提交真實代碼到個人工作室 ／ 由 🦀 AI二號審核
+    <strong>ℹ️ 規則：</strong> 每人同時限 <strong>1個</strong> 任務 ／ 完成後提交真實代碼到個人工作室 ／ 由 🦀 AI二號審核
     <span style="float:right;cursor:pointer" onclick="toggleView()" title="切換視圖">📊列表 / 🗃️卡片</span>
   </div>
   <div class="sec-title">⚡ 進行中 <span class="cnt" id="ip-cnt">0</span></div>
@@ -384,6 +384,14 @@ async function loadTasks() {
   if(qsIp) qsIp.textContent = inprog.length + reviewing.length;
   if(qsOpen) qsOpen.textContent = open.length;
   if(qsDone) qsDone.textContent = done.length;
+  // 整體進度條
+  const total3 = tasks.length;
+  if(total3 > 0) {
+    const pct = Math.round(done.length/total3*100);
+    document.getElementById('overall-progress').style.display = 'block';
+    document.getElementById('progress-pct').textContent = pct + '%';
+    document.getElementById('progress-bar-fill').style.width = pct + '%';
+  }
 
   const ipEl = document.getElementById('tasks-inprogress');
   ipEl.innerHTML = [...inprog, ...reviewing].length === 0
@@ -728,6 +736,10 @@ async function loadRanking() {
     </div>`;
   }).join('');
 
+  // 今日完成數
+  const today = new Date().toDateString();
+  const todayDone = tasks.filter(t=>t.status==='完成').length; // 簡化
+  
   // 加入整體完成率
   const totalDone = Object.values(doneMap).reduce((a,b)=>a+b,0);
   const totalTasks = tasks.length;
