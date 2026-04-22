@@ -137,7 +137,7 @@
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 12px; margin-bottom: 24px; }
     .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; transition: transform .2s; cursor:default; }
     .stat-card:hover { transform: scale(1.03); border-color: var(--blue); }
-    .stat-num { font-size: 2rem; font-weight: 700; color: var(--blue); }
+    .stat-num { font-size: 2rem; font-weight: 700; color: var(--blue); transition: all 0.5s ease; }
     .stat-label { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
 
 
@@ -483,7 +483,7 @@ async function loadChat() {
 
   el.innerHTML = grouped.map(m => {
     const ai = aiMap[m.author?.username] || {cls:'', emoji:'👤', name: m.author?.username || '未知'};
-    const time = m.timestamp ? new Date(m.timestamp).toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'}) : '';
+    const now = new Date(); const msgDate = new Date(m.timestamp); const isToday = msgDate.toDateString()===now.toDateString(); const time = m.timestamp ? (isToday ? msgDate.toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'}) : msgDate.toLocaleDateString('zh-HK',{month:'short',day:'numeric'}) + ' ' + msgDate.toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'})) : '';
     const content = (m.content||'').substring(0,300);
     if (!content && !m.attachments?.length) return ''; // 跳過空訊息
     const headerHtml = m.sameAuthor ? '' : `<div class="msg-header"><span class="msg-name ${ai.cls}">${ai.name}</span><span class="msg-time">${time}</span></div>`;
@@ -929,6 +929,8 @@ document.addEventListener('keydown', e => {
   if (e.key === 'r' || e.key === 'R') loadAll();
   if (e.key === 't' || e.key === 'T') toggleTheme();
   if (e.key === '/') { document.getElementById('task-search')?.focus(); e.preventDefault(); }
+  if (e.key === 'Escape') { document.getElementById('task-search').value=''; filterTasks(''); }
+  if (e.key === 'f' || e.key === 'F') { document.getElementById('task-search')?.focus(); e.preventDefault(); }
 });
 </script>
 </body>
