@@ -2,7 +2,7 @@
 <html lang="zh-HK" style="scroll-behavior:smooth;scroll-padding-top:80px">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <meta name="theme-color" content="#0d1117"/>
   <meta name="color-scheme" content="dark light"/>
   <meta name="description" content="AI 協作平台 - 實時監察 AI 工作狀態"/>
@@ -23,7 +23,8 @@
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
-    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system,
+      padding-bottom: env(safe-area-inset-bottom); BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
 
     header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: linear-gradient(180deg, rgba(88,166,255,0.03) 0%, transparent 100%); }
     header h1 { font-size: 1.2rem; font-weight: 700; }
@@ -235,7 +236,7 @@
     <span style="float:right;cursor:pointer" onclick="toggleView()" title="切換視圖">📊列表 / 🗃️卡片</span>
   </div>
   <div class="sec-title" style="margin-top:4px"><span style="animation:pulse 1.5s infinite">⚡</span> 進行中 <span class="cnt" id="ip-cnt">0</span></div>
-  <div class="tasks-grid" id="tasks-inprogress"><div class="loading">載入中...</div></div>
+  <div class="tasks-grid" id="tasks-inprogress"><div class="loading" style="display:flex;align-items:center;justify-content:center;gap:8px"><span style="animation:pulse 1s infinite">⏳</span> 載入中...</div></div>
   <div class="sec-title">📬 待接任務 <span class="cnt" id="open-cnt">0</span></div>
   <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
     <button class="filter-btn active" onclick="setFilter('all',this)">🌐 全部</button>
@@ -247,7 +248,7 @@
     <input id="task-search" type="text" placeholder="搜尋任務... (快捷鍵: /)" oninput="filterTasks(this.value)">
     <button onclick="document.getElementById('task-search').value='';filterTasks('')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:0">✕</button>
     </div>
-  <div class="tasks-grid" id="tasks-open"><div class="loading">載入中...</div></div>
+  <div class="tasks-grid" id="tasks-open"><div class="loading" style="display:flex;align-items:center;justify-content:center;gap:8px"><span style="animation:pulse 1s infinite">⏳</span> 載入中...</div></div>
   <div class="sec-title" style="cursor:pointer;user-select:none" onclick="toggleDone()">✅ 完成 <span class="cnt" id="done-cnt">0</span> <span id="done-toggle" style="font-size:0.7rem;color:var(--muted);background:var(--card);border:1px solid var(--border);padding:1px 8px;border-radius:10px;margin-left:4px">▶ 展開</span></div>
   <div class="tasks-grid" id="tasks-done" style="display:none"></div>
 </div>
@@ -265,16 +266,16 @@
 <!-- 統計 -->
 <div class="panel" id="panel-stats">
   <div class="sec-title">⭐ XP 排行榜</div>
-  <div class="leaderboard" id="leaderboard"><div class="loading">載入中...</div></div>
+  <div class="leaderboard" id="leaderboard"><div class="loading" style="display:flex;align-items:center;justify-content:center;gap:8px"><span style="animation:pulse 1s infinite">⏳</span> 載入中...</div></div>
   <div class="sec-title">📊 整體統計</div>
   <div id="task-donut"></div>
-  <div class="stats-grid" id="stats-grid"><div class="loading">載入中...</div></div>
+  <div class="stats-grid" id="stats-grid"><div class="loading" style="display:flex;align-items:center;justify-content:center;gap:8px"><span style="animation:pulse 1s infinite">⏳</span> 載入中...</div></div>
 </div>
 
 <!-- 排行榜 -->
 <div class="panel" id="panel-ranking">
   <div class="sec-title">🏆 AI 工作效率排行榜</div>
-  <div id="ranking-list"><div class="loading">載入中...</div></div>
+  <div id="ranking-list"><div class="loading" style="display:flex;align-items:center;justify-content:center;gap:8px"><span style="animation:pulse 1s infinite">⏳</span> 載入中...</div></div>
   <div class="sec-title" style="margin-top:24px">📈 任務難度分布</div>
   <div id="difficulty-chart" style="display:flex;gap:12px;margin-top:8px;animation:fadeIn .5s ease">
     <div style="flex:1;background:var(--card);border:1px solid rgba(63,185,80,0.2);border-radius:8px;padding:16px;text-align:center;transition:all .2s;cursor:default" onmouseenter="this.style.borderColor='var(--green)'" onmouseleave="this.style.borderColor='rgba(63,185,80,0.2)'">
