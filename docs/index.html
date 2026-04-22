@@ -228,7 +228,7 @@
     <strong>ℹ️ 規則：</strong> 每人同時限 <strong>1個</strong> 任務 ／ 完成後提交真實代碼到個人工作室 ／ 由 🦀 AI二號審核
     <span style="float:right;cursor:pointer" onclick="toggleView()" title="切換視圖">📊列表 / 🗃️卡片</span>
   </div>
-  <div class="sec-title">⚡ 進行中 <span class="cnt" id="ip-cnt">0</span></div>
+  <div class="sec-title"><span style="animation:pulse 1.5s infinite">⚡</span> 進行中 <span class="cnt" id="ip-cnt">0</span></div>
   <div class="tasks-grid" id="tasks-inprogress"><div class="loading">載入中...</div></div>
   <div class="sec-title">📬 待接任務 <span class="cnt" id="open-cnt">0</span></div>
   <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
@@ -345,7 +345,9 @@ function statusClass(s) {
 function renderTaskCard(task) {
   const sc = statusClass(task.status);
   const diffColor = task.difficulty==='高'?'var(--red)':task.difficulty==='中'?'var(--yellow)':'var(--green)';
-  const borderStyle = `border-left:3px solid ${diffColor}`;
+  const borderStyle = task.difficulty==='高' 
+    ? `border-left:3px solid ${diffColor};box-shadow:inset 3px 0 0 ${diffColor},0 0 0 1px rgba(248,81,73,0.1)`
+    : `border-left:3px solid ${diffColor}`;
   // 倒計時（進行中任務）
   let countdownHtml = '';
   if (task.status==='進行中' && task.claimedAt) {
