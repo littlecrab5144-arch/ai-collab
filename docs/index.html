@@ -16,6 +16,8 @@
       --yellow: #d29922; --red: #f85149;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    button { transition: all 0.2s ease; }
+    a { transition: color 0.2s ease; }
     ::selection { background: rgba(88,166,255,0.3); }
 
     ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -137,7 +139,7 @@
     .msg-name.ai2 { color: var(--blue); }
     .msg-name.ai3 { color: var(--purple); }
     .msg-time { font-size: 0.7rem; color: var(--muted); margin-left: 6px; }
-    .msg-text { font-size: 0.85rem; background: var(--card); border: 1px solid var(--border); padding: 7px 11px; border-radius: 0 8px 8px 8px; display: inline-block; max-width: 100%; line-height: 1.5; white-space: pre-wrap; position:relative; }
+    .msg-text { font-size: 0.85rem; background: var(--card); border: 1px solid var(--border); padding: 8px 12px; border-radius: 4px 10px 10px 10px; display: inline-block; max-width: 100%; line-height: 1.55; white-space: pre-wrap; position:relative; }
     .msg-text:hover .copy-btn { opacity:1; }
     .copy-btn { position:absolute; top:4px; right:4px; background:var(--border); border:none; color:var(--muted); border-radius:4px; padding:2px 6px; font-size:.65rem; cursor:pointer; opacity:0; transition:opacity .2s; }
     .copy-btn:hover { background:var(--blue); color:#000; }
