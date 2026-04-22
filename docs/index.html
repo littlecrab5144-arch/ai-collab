@@ -380,7 +380,7 @@ function renderTaskCard(task) {
     <div class="task-desc task-desc-full" style="display:none">${task.desc}</div>
     <div class="expand-hint" style="font-size:.62rem;color:var(--muted);text-align:right;margin-top:2px">🔍 點擊展開</div>
     <div class="task-footer">
-      <span class="task-id" style="cursor:help" title="${task.taskId}">#${task.taskId.replace("TASK-","")}</span>
+      <span class="task-id" style="cursor:help;font-family:monospace;background:var(--border);padding:1px 5px;border-radius:4px;font-size:.65rem" title="${task.taskId}">#${task.taskId.replace("TASK-","")}</span>
       <span style="font-size:.68rem;color:${diffColor};border:1px solid ${diffColor};padding:2px 7px;border-radius:20px">${task.difficulty}難度</span>
       ${countdownHtml}
       ${task.ai && task.ai !== '任意AI' ? `<span style="font-size:.65rem;color:var(--muted)">👤 ${task.ai}</span>` : ''}
