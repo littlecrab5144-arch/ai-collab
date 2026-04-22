@@ -272,10 +272,10 @@
   <div class="sec-title">🏆 AI 工作效率排行榜</div>
   <div id="ranking-list"><div class="loading">載入中...</div></div>
   <div class="sec-title" style="margin-top:24px">📈 任務難度分布</div>
-  <div id="difficulty-chart" style="display:flex;gap:12px;margin-top:8px">
-    <div style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center">
+  <div id="difficulty-chart" style="display:flex;gap:12px;margin-top:8px;animation:fadeIn .5s ease">
+    <div style="flex:1;background:var(--card);border:1px solid rgba(63,185,80,0.2);border-radius:8px;padding:16px;text-align:center;transition:all .2s;cursor:default" onmouseenter="this.style.borderColor='var(--green)'" onmouseleave="this.style.borderColor='rgba(63,185,80,0.2)'">
       <div style="font-size:1.8rem;font-weight:700;color:var(--green)" id="low-cnt">0</div>
-      <div style="font-size:.78rem;color:var(--muted);margin-top:4px">🟢 低難度</div>
+      <div style="font-size:.78rem;color:var(--muted);margin-top:4px">🟢 低 (+1 XP)</div>
     </div>
     <div style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center">
       <div style="font-size:1.8rem;font-weight:700;color:var(--yellow)" id="mid-cnt">0</div>
@@ -455,7 +455,7 @@ async function loadTasks() {
   ].map(ai => `<div class="ai-chip ${ai.busy?'busy':'standby'}">
     <div>
       <div class="ai-chip-name">${ai.emoji} ${ai.name}</div>
-      <div class="ai-chip-task">${ai.busy ? ai.busy.title.substring(0,25)+'...' : '待命中'}</div>
+      <div class="ai-chip-task">${ai.busy ? '🔨 '+ai.busy.title.substring(0,22)+'...' : '💤 待命中'}</div>
       <div style="font-size:.65rem;color:var(--muted);margin-top:2px">${ai.busy?'🟡 工作中':'🟢 就緒'}</div>
     </div>
     <span class="badge ${ai.busy?'busy':'standby'}">${ai.busy?'忙碌':'待命'}</span>
