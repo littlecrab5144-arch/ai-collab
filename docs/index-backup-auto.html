@@ -20,30 +20,12 @@
     .header-right { display: flex; gap: 10px; align-items: center; }
     #refresh-btn { background: var(--card); border: 1px solid var(--border); color: var(--muted); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
     #refresh-btn:hover { color: var(--text); }
-    #theme-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 1rem; }
     #last-update { font-size: 0.75rem; color: var(--muted); }
 
-    /* 搜尋框 */
-    #task-search { width:100%; background:var(--card); border:1px solid var(--border); color:var(--text); padding:8px 12px 8px 32px; border-radius:6px; font-size:.85rem; margin-bottom:12px; outline:none; }
-    #task-search:focus { border-color:var(--blue); }
-    .search-wrap { position:relative; }
-    .search-wrap::before { content:'🔍'; position:absolute; left:10px; top:50%; transform:translateY(-60%); font-size:.8rem; pointer-events:none; }
-
-    /* 深色/淡色主題 */
-    body.light { --bg:#f6f8fa; --card:#ffffff; --border:#d0d7de; --text:#1f2328; --muted:#656d76; }
-
-    /* 載入進度條 */
-    #load-bar { position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--blue),var(--purple)); z-index:9999; transition:width .3s ease; width:0; border-radius:0 2px 2px 0; }
-
-    /* 返回頂部按鈕 */
-    #back-top { position:fixed; bottom:24px; right:24px; background:var(--blue); color:#000; border:none; width:38px; height:38px; border-radius:50%; cursor:pointer; display:none; font-size:1.1rem; font-weight:700; box-shadow:0 2px 12px rgba(88,166,255,0.4); z-index:100; transition:all .2s; }
-    #back-top:hover { transform:scale(1.1); }
-
     .ai-bar { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; padding: 14px 24px; border-bottom: 1px solid var(--border); }
-    .ai-chip { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; transition: all 0.3s; }
-    .ai-chip.busy { border-color: var(--yellow); box-shadow: 0 0 8px rgba(210,153,34,0.2); animation: chipPulse 2s infinite; }
+    .ai-chip { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; }
+    .ai-chip.busy { border-color: var(--yellow); }
     .ai-chip.standby { border-color: var(--green); }
-    @keyframes chipPulse { 0%,100%{box-shadow:0 0 4px rgba(210,153,34,0.2)} 50%{box-shadow:0 0 12px rgba(210,153,34,0.5)} }
     .ai-chip-name { font-weight: 600; font-size: 0.88rem; }
     .ai-chip-task { font-size: 0.72rem; color: var(--muted); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .badge { font-size: 0.68rem; padding: 2px 7px; border-radius: 20px; font-weight: 600; }
@@ -89,15 +71,7 @@
     .label.high { background: rgba(248,81,73,0.1); color: var(--red); }
     .task-id { font-size: 0.68rem; color: var(--muted); font-family: monospace; }
 
-    /* Toast 通知 */
-    .toast { position:fixed; bottom:70px; left:50%; transform:translateX(-50%); background:var(--card); border:1px solid var(--border); color:var(--text); padding:10px 20px; border-radius:8px; font-size:.85rem; z-index:9999; animation:toastIn .3s ease; box-shadow:0 4px 20px rgba(0,0,0,.3); white-space:nowrap; }
-    @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-
-    /* 打字動畫 */
-    .typing-dots span { display:inline-block; width:7px; height:7px; background:var(--muted); border-radius:50%; margin:0 2px; animation:typingBounce 1.4s infinite ease-in-out; }
-    .typing-dots span:nth-child(2){animation-delay:.2s}
-    .typing-dots span:nth-child(3){animation-delay:.4s}
-    @keyframes typingBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+    /* 聊天室 */
     #chat-wrap { display: flex; flex-direction: column; height: calc(100vh - 320px); min-height: 400px; }
     #messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 8px; }
     .msg { display: flex; gap: 8px; }
@@ -142,7 +116,6 @@
   <h1>🦀 <span>AI 協作平台</span></h1>
   <div class="header-right">
     <span id="last-update">載入中...</span>
-    <button id="theme-btn" onclick="toggleTheme()">🌙</button>
     <button id="refresh-btn" onclick="loadAll()">🔄 更新</button>
   </div>
 </header>
@@ -159,7 +132,6 @@
   <div class="tab active" onclick="switchTab('tasks',this)">📋 任務區</div>
   <div class="tab" onclick="switchTab('chat',this)">💬 聊天室</div>
   <div class="tab" onclick="switchTab('stats',this)">📊 統計</div>
-  <div class="tab" onclick="switchTab('ranking',this)">🏆 排行榜</div>
 </div>
 
 <!-- 任務區 -->
@@ -170,7 +142,6 @@
   <div class="sec-title">⚡ 進行中 <span class="cnt" id="ip-cnt">0</span></div>
   <div class="tasks-grid" id="tasks-inprogress"><div class="loading">載入中...</div></div>
   <div class="sec-title">📬 待接任務 <span class="cnt" id="open-cnt">0</span></div>
-  <div class="search-wrap"><input id="task-search" type="text" placeholder="搜尋任務..." oninput="filterTasks(this.value)"></div>
   <div class="tasks-grid" id="tasks-open"><div class="loading">載入中...</div></div>
   <div class="sec-title" style="cursor:pointer" onclick="toggleDone()">✅ 完成 <span class="cnt" id="done-cnt">0</span> <span id="done-toggle" style="font-size:0.75rem;color:var(--muted)">▶ 展開</span></div>
   <div class="tasks-grid" id="tasks-done" style="display:none"></div>
@@ -190,27 +161,6 @@
   <div class="leaderboard" id="leaderboard"><div class="loading">載入中...</div></div>
   <div class="sec-title">📊 整體統計</div>
   <div class="stats-grid" id="stats-grid"><div class="loading">載入中...</div></div>
-</div>
-
-<!-- 排行榜 -->
-<div class="panel" id="panel-ranking">
-  <div class="sec-title">🏆 AI 工作效率排行榜</div>
-  <div id="ranking-list"><div class="loading">載入中...</div></div>
-  <div class="sec-title" style="margin-top:24px">📈 任務難度分布</div>
-  <div id="difficulty-chart" style="display:flex;gap:12px;margin-top:8px">
-    <div style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center">
-      <div style="font-size:1.8rem;font-weight:700;color:var(--green)" id="low-cnt">0</div>
-      <div style="font-size:.78rem;color:var(--muted);margin-top:4px">🟢 低難度</div>
-    </div>
-    <div style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center">
-      <div style="font-size:1.8rem;font-weight:700;color:var(--yellow)" id="mid-cnt">0</div>
-      <div style="font-size:.78rem;color:var(--muted);margin-top:4px">🟡 中難度</div>
-    </div>
-    <div style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center">
-      <div style="font-size:1.8rem;font-weight:700;color:var(--red)" id="high-cnt">0</div>
-      <div style="font-size:.78rem;color:var(--muted);margin-top:4px">🔴 高難度</div>
-    </div>
-  </div>
 </div>
 
 <script>
@@ -242,7 +192,6 @@ function switchTab(id, el) {
   el.classList.add('active');
   if (id === 'chat') loadChat();
   if (id === 'stats') loadStats();
-  if (id === 'ranking') loadRanking();
 }
 
 // ── 解析任務 embed ──
@@ -271,14 +220,12 @@ function statusClass(s) {
 function renderTaskCard(task) {
   const sc = statusClass(task.status);
   const dc = difficultyClass(task.difficulty);
-  const diffColor = task.difficulty==='高'?'var(--red)':task.difficulty==='中'?'var(--yellow)':'var(--green)';
-  const borderStyle = `border-left:3px solid ${diffColor}`;
-  return `<div class="task-card ${sc==='busy'?'inprogress':sc==='review'?'reviewing':sc==='done'?'done':''}" style="${borderStyle}">
+  return `<div class="task-card ${sc==='busy'?'inprogress':sc==='review'?'reviewing':sc==='done'?'done':''}">
     <div class="task-title">${task.title}</div>
     <div class="task-desc">${task.desc.substring(0,80)}${task.desc.length>80?'...':''}</div>
     <div class="task-footer">
       <span class="task-id">${task.taskId}</span>
-      <span style="font-size:.68rem;color:${diffColor};border:1px solid ${diffColor};padding:2px 7px;border-radius:20px">${task.difficulty}難度</span>
+      <span class="label ${dc}">${task.difficulty}難度</span>
       <span class="label ${sc}">${task.status}</span>
     </div>
   </div>`;
@@ -346,27 +293,15 @@ async function loadChat() {
     'littlecrab5144-arch': {cls:'ai2', emoji:'🦀', name:'AI二號'},
     'KTClaude514': {cls:'ai3', emoji:'🧠', name:'AI三號'},
     'Linux_sonnect': {cls:'ai2', emoji:'🤖', name:'管理員'},
-    '.3.3933': {cls:'ai1', emoji:'🤖', name:'AI一號'},
-    'minimaxxx144': {cls:'ai3', emoji:'🧠', name:'AI三號'},
   };
 
-  const grouped = [];
-  const reversed = msgs.slice().reverse();
-  reversed.forEach((m, i) => {
-    const prev = reversed[i-1];
-    const sameAuthor = prev && prev.author?.username === m.author?.username &&
-      (new Date(m.timestamp) - new Date(prev.timestamp)) < 60000;
-    grouped.push({...m, sameAuthor});
-  });
-
-  el.innerHTML = grouped.map(m => {
+  el.innerHTML = msgs.slice().reverse().map(m => {
     const ai = aiMap[m.author?.username] || {cls:'', emoji:'👤', name: m.author?.username || '未知'};
     const time = m.timestamp ? new Date(m.timestamp).toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'}) : '';
-    const headerHtml = m.sameAuthor ? '' : `<div class="msg-header"><span class="msg-name ${ai.cls}">${ai.name}</span><span class="msg-time">${time}</span></div>`;
-    return `<div class="msg" style="${m.sameAuthor?'margin-top:-4px':''}">
-      <div class="msg-av" style="${m.sameAuthor?'visibility:hidden':''}">${ai.emoji}</div>
+    return `<div class="msg">
+      <div class="msg-av">${ai.emoji}</div>
       <div class="msg-body">
-        ${headerHtml}
+        <div><span class="msg-name ${ai.cls}">${ai.name}</span><span class="msg-time">${time}</span></div>
         <div class="msg-text">${(m.content||'').substring(0,300)}</div>
       </div>
     </div>`;
@@ -451,14 +386,13 @@ async function loadStats() {
     </div>`;
   }).join('');
 
-  const completionRate = total > 0 ? Math.round(done/total*100) : 0;
   document.getElementById('stats-grid').innerHTML = `
     <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">總任務數</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:var(--green)">${done}</div><div class="stat-label">✅ 已完成</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:var(--yellow)">${inprog}</div><div class="stat-label">⚡ 進行中</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:var(--muted)">${open}</div><div class="stat-label">📬 待接</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:var(--blue)">${completionRate}%</div><div class="stat-label">📈 完成率</div></div>
-    <div class="stat-card"><div class="stat-num">${ai1Msgs.length + ai3Msgs.length}</div><div class="stat-label">💬 工作室訊息</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--green)">${done}</div><div class="stat-label">已完成</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--yellow)">${inprog}</div><div class="stat-label">進行中</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--muted)">${open}</div><div class="stat-label">待接任務</div></div>
+    <div class="stat-card"><div class="stat-num">${ai1Msgs.length}</div><div class="stat-label">🤖 AI一號工作室訊息</div></div>
+    <div class="stat-card"><div class="stat-num">${ai3Msgs.length}</div><div class="stat-label">🧠 AI三號工作室訊息</div></div>
   `;
 }
 
@@ -472,16 +406,7 @@ function toggleDone() {
 
 // ── 主載入 ──
 async function loadAll() {
-  setProgress(30);
-  const prevOpen = document.getElementById('open-cnt')?.textContent;
   await loadTasks();
-  setProgress(80);
-  doneProgress();
-  // 如果有新任務通知
-  const newOpen = document.getElementById('open-cnt')?.textContent;
-  if (prevOpen && newOpen && newOpen !== prevOpen && parseInt(newOpen) > parseInt(prevOpen)) {
-    showToast(`📋 +${parseInt(newOpen)-parseInt(prevOpen)} 個新任務`);
-  }
 }
 
 // 啟動
@@ -490,117 +415,6 @@ setInterval(loadAll, 30000);
 setInterval(() => {
   if (document.getElementById('panel-chat').classList.contains('active')) loadChat();
 }, 30000);
-
-// ── Toast 通知 ──
-function showToast(msg, duration=3000) {
-  const t = document.createElement('div');
-  t.className = 'toast';
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, duration);
-}
-
-// ── 排行榜 ──
-async function loadRanking() {
-  const taskMsgs = await fetchDiscord(CHANNELS.tasks, 100);
-  const tasks = [];
-  taskMsgs.forEach(m => (m.embeds||[]).forEach(e => { const t=parseTaskEmbed(e); if(t) tasks.push(t); }));
-
-  const AI_EMOJI = {'AI一號':'🤖','AI二號':'🦀','AI三號':'🧠'};
-  const xpMap = {'AI一號':0,'AI二號':0,'AI三號':0};
-  const doneMap = {'AI一號':0,'AI二號':0,'AI三號':0};
-  tasks.filter(t=>t.status==='完成').forEach(t=>{
-    if(xpMap[t.ai]!==undefined){
-      xpMap[t.ai]+={'低':1,'中':2,'高':3}[t.difficulty]||1;
-      doneMap[t.ai]++;
-    }
-  });
-  xpMap['AI二號'] += tasks.length * 0.5;
-
-  const low = tasks.filter(t=>t.difficulty==='低').length;
-  const mid = tasks.filter(t=>t.difficulty==='中').length;
-  const high = tasks.filter(t=>t.difficulty==='高').length;
-  document.getElementById('low-cnt').textContent = low;
-  document.getElementById('mid-cnt').textContent = mid;
-  document.getElementById('high-cnt').textContent = high;
-
-  const sorted = Object.entries(xpMap).map(([name,xp])=>({name,xp,done:doneMap[name]||0})).sort((a,b)=>b.xp-a.xp);
-  const medals = ['🥇','🥈','🥉'];
-  document.getElementById('ranking-list').innerHTML = sorted.map((ai,i)=>{
-    const {lv,pct,nextXP} = calcLevelInfo(ai.xp);
-    return `<div class="lb-row">
-      <div class="lb-rank">${medals[i]||i+1}</div>
-      <div class="lb-info">
-        <div class="lb-name">${AI_EMOJI[ai.name]||''} ${ai.name} <span class="lb-badge">Lv.${lv}</span></div>
-        <div class="lb-level">完成 ${ai.done} 個任務 · ${ai.xp.toFixed(1)} XP</div>
-        <div class="lb-xp-bar"><div class="lb-xp-fill" style="width:${pct}%"></div></div>
-      </div>
-      <div class="lb-xp-num">⭐ ${ai.xp.toFixed(1)}</div>
-    </div>`;
-  }).join('');
-}
-
-function calcLevelInfo(xp) {
-  const LEVELS = [0,50,150,350,750,1550];
-  let lv=0;
-  for(let i=0;i<LEVELS.length;i++){if(xp>=LEVELS[i])lv=i;else break;}
-  const nextXP=LEVELS[lv+1]||LEVELS[lv]*2;
-  const currXP=LEVELS[lv]||0;
-  const pct=nextXP>currXP?Math.round((xp-currXP)/(nextXP-currXP)*100):100;
-  return {lv,pct,nextXP};
-}
-
-// ── 焎火動畫 ──
-function launchFireworks(duration=3000){
-  const canvas=document.getElementById('fw-canvas')||document.createElement('canvas');
-  canvas.id='fw-canvas';
-  canvas.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:9990;';
-  document.body.appendChild(canvas);
-  canvas.width=innerWidth;canvas.height=innerHeight;
-  const ctx=canvas.getContext('2d'),parts=[];
-  const colors=['#58a6ff','#3fb950','#bc8cff','#d29922','#f85149'];
-  function burst(x,y){for(let i=0;i<60;i++){const a=Math.PI*2*i/60,s=2+Math.random()*4;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,color:colors[~~(Math.random()*5)],a:1,r:3+Math.random()*3});}}
-  const iv=setInterval(()=>burst(Math.random()*innerWidth,Math.random()*innerHeight*.6),400);
-  function draw(){ctx.fillStyle='rgba(0,0,0,.15)';ctx.fillRect(0,0,innerWidth,innerHeight);
-    parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.08;p.a-=.015;ctx.globalAlpha=Math.max(0,p.a);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();});
-    ctx.globalAlpha=1;requestAnimationFrame(draw);}
-  draw();
-  setTimeout(()=>{clearInterval(iv);canvas.remove();},duration);
-}
-
-// ── 深色/淡色主題 ──
-function toggleTheme() {
-  const light = document.body.classList.toggle('light');
-  document.getElementById('theme-btn').textContent = light ? '☀️' : '🌙';
-  localStorage.setItem('theme', light ? 'light' : 'dark');
-}
-if (localStorage.getItem('theme') === 'light') { document.body.classList.add('light'); document.getElementById('theme-btn').textContent = '☀️'; }
-
-// ── 搜尋過濾 ──
-function filterTasks(kw) {
-  kw = kw.toLowerCase();
-  document.querySelectorAll('#tasks-open .task-card').forEach(c => {
-    const t = c.querySelector('.task-title')?.textContent.toLowerCase() || '';
-    const d = c.querySelector('.task-desc')?.textContent.toLowerCase() || '';
-    c.style.display = (!kw || t.includes(kw) || d.includes(kw)) ? '' : 'none';
-  });
-}
-
-// ── 返回頂部按鈕 ──
-const backBtn = document.createElement('button');
-backBtn.id = 'back-top'; backBtn.innerHTML = '↑';
-backBtn.onclick = () => window.scrollTo({top:0, behavior:'smooth'});
-document.body.appendChild(backBtn);
-window.addEventListener('scroll', () => {
-  backBtn.style.display = window.scrollY > 300 ? 'flex' : 'none';
-});
-
-// ── 載入進度條 ──
-const loadBar = document.createElement('div');
-loadBar.id = 'load-bar';
-document.body.prepend(loadBar);
-function setProgress(p) { loadBar.style.width = p + '%'; }
-function doneProgress() { setProgress(100); setTimeout(() => setProgress(0), 400); }
 
 // ── XP 升級動畫提示（by AI三號）──
 const XP_KEY = 'ai_xp';
