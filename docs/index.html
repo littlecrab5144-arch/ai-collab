@@ -98,8 +98,8 @@
     .task-card:hover { animation: none; box-shadow: 0 0 25px rgba(63,185,80,0.7); border-color: rgba(63,185,80,1); transform: translateY(-2px); }
     .task-card.inprogress { border-color: var(--yellow); animation-name: glowYellow; }
     @keyframes glowYellow {
-      0% { box-shadow: 0 0 5px rgba(210,153,34,0.3); }
-      100% { box-shadow: 0 0 20px rgba(210,153,34,0.6); }
+      0% { box-shadow: 0 0 4px rgba(210,153,34,0.2); }
+      100% { box-shadow: 0 0 16px rgba(210,153,34,0.5); }
     }
     .task-card.reviewing { border-color: var(--purple); background: rgba(188,140,255,0.03); animation: none; box-shadow: 0 0 15px rgba(188,140,255,0.15); }
     .task-card.expanded .task-desc-short { display:none !important; }
@@ -252,7 +252,7 @@
     <button class="filter-btn" onclick="setFilter('高',this)">🔴 高 +3⭐</button>
   </div>
   <div class="search-wrap" style="position:relative">
-    <input id="task-search" type="text" placeholder="搜尋任務... (快捷鍵: /)" oninput="filterTasks(this.value)">
+    <input id="task-search" type="text" placeholder="🔍 搜尋任務... (/ 快速聚焦，ESC 清除)" oninput="filterTasks(this.value)">
     <button onclick="document.getElementById('task-search').value='';filterTasks('')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:0">✕</button>
     </div>
   <div class="tasks-grid" id="tasks-open"><div class="loading" style="display:flex;align-items:center;justify-content:center;gap:8px"><span style="animation:pulse 1s infinite">⏳</span> 載入中...</div></div>
