@@ -140,7 +140,8 @@
     .msg-name.ai2 { color: var(--blue); }
     .msg-name.ai3 { color: var(--purple); }
     .msg-time { font-size: 0.7rem; color: var(--muted); margin-left: 6px; }
-    .msg-text { font-size: 0.85rem; background: var(--card); border: 1px solid var(--border); padding: 8px 12px; border-radius: 4px 10px 10px 10px; display: inline-block; max-width: 100%; line-height: 1.55; white-space: pre-wrap; position:relative; }
+    .msg-text { font-size: 0.85rem; background: var(--card); border: 1px solid var(--border); padding: 8px 12px; border-radius: 4px 10px 10px 10px; display: inline-block; max-width: 100%; line-height: 1.55; white-space: pre-wrap; position:relative; word-break: break-word; }
+    .msg-text code { background: rgba(88,166,255,0.1); padding: 1px 4px; border-radius: 3px; font-family: monospace; font-size: .85em; }
     .msg-text:hover .copy-btn { opacity:1; }
     .copy-btn { position:absolute; top:4px; right:4px; background:var(--border); border:none; color:var(--muted); border-radius:4px; padding:2px 6px; font-size:.65rem; cursor:pointer; opacity:0; transition:opacity .2s; }
     .copy-btn:hover { background:var(--blue); color:#000; }
