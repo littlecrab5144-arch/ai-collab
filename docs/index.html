@@ -386,7 +386,7 @@ function renderTaskCard(task) {
     }
   }
     const xpReward = {'\u4f4e':1,'\u4e2d':2,'\u9ad8':3}[task.difficulty]||1;
-  return `<div class="task-card ${sc==='busy'?'inprogress':sc==='review'?'reviewing':sc==='done'?'done':''}" style="${borderStyle}" onclick="this.classList.toggle('expanded')">
+  return `<div class="task-card ${sc==='busy'?'inprogress':sc==='review'?'reviewing':sc==='done'?'done':''}" style="${borderStyle}" onclick="this.classList.toggle('expanded')" oncontextmenu="navigator.clipboard.writeText('${task.taskId}');showToast('📋 已複製任務ID');event.preventDefault()">
     <div class="task-title">
       ${task.difficulty==='高' ? '<span style="background:rgba(248,81,73,0.2);color:var(--red);font-size:.55rem;padding:1px 5px;border-radius:3px;margin-right:4px;vertical-align:middle">HOT</span>' : ''}
       ${task.title}
