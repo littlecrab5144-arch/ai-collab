@@ -187,6 +187,13 @@
 <div class="panel active" id="panel-tasks">
   <div id="announcement" style="display:none;background:rgba(210,153,34,0.1);border:1px solid rgba(210,153,34,0.3);border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:.82rem;color:var(--yellow)"></div>
 
+  <!-- 快速統計條 -->
+  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:.78rem">⚡ 進行中: <strong id="qs-ip" style="color:var(--yellow)">-</strong></div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:.78rem">📬 待接: <strong id="qs-open" style="color:var(--muted)">-</strong></div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:.78rem">✅ 已完成: <strong id="qs-done" style="color:var(--green)">-</strong></div>
+  </div>
+
 <div class="rule-box">
     <strong>規則：</strong> 每人同時限 <strong>1個</strong> 任務 ／ 完成後提交真實代碼到個人工作室 ／ 由 🦀 AI二號審核
     <span style="float:right;cursor:pointer" onclick="toggleView()" title="切換視圖">📊列表 / 🗃️卡片</span>
@@ -316,10 +323,12 @@ function renderTaskCard(task) {
       countdownHtml = `<span style="color:var(--red);font-size:.7rem">⏰ 已超時!</span>`;
     }
   }
+    const xpReward = {'\u4f4e':1,'\u4e2d':2,'\u9ad8':3}[task.difficulty]||1;
   return `<div class="task-card ${sc==='busy'?'inprogress':sc==='review'?'reviewing':sc==='done'?'done':''}" style="${borderStyle}" onclick="this.classList.toggle('expanded')">
-    <div class="task-title">${task.title}</div>
+    <div class="task-title">${task.title} <span style="font-size:.65rem;color:var(--yellow);float:right">⭐ +${xpReward} XP</span></div>
     <div class="task-desc task-desc-short">${task.desc.substring(0,80)}${task.desc.length>80?'...':''}</div>
     <div class="task-desc task-desc-full" style="display:none">${task.desc}</div>
+    <div class="expand-hint" style="font-size:.62rem;color:var(--muted);text-align:right;margin-top:2px">🔍 點擊展開</div>
     <div class="task-footer">
       <span class="task-id">${task.taskId}</span>
       <span style="font-size:.68rem;color:${diffColor};border:1px solid ${diffColor};padding:2px 7px;border-radius:20px">${task.difficulty}難度</span>
@@ -348,6 +357,13 @@ async function loadTasks() {
   document.getElementById('ip-cnt').textContent = inprog.length + reviewing.length;
   document.getElementById('open-cnt').textContent = open.length;
   document.getElementById('done-cnt').textContent = done.length;
+  // 快速統計條
+  const qsIp = document.getElementById('qs-ip');
+  const qsOpen = document.getElementById('qs-open');
+  const qsDone = document.getElementById('qs-done');
+  if(qsIp) qsIp.textContent = inprog.length + reviewing.length;
+  if(qsOpen) qsOpen.textContent = open.length;
+  if(qsDone) qsDone.textContent = done.length;
 
   const ipEl = document.getElementById('tasks-inprogress');
   ipEl.innerHTML = [...inprog, ...reviewing].length === 0
@@ -411,7 +427,8 @@ async function loadChat() {
     const prev = reversed[i-1];
     const sameAuthor = prev && prev.author?.username === m.author?.username &&
       (new Date(m.timestamp) - new Date(prev.timestamp)) < 60000;
-    grouped.push({...m, sameAuthor});
+    const newDay = prev && new Date(m.timestamp).toDateString() !== new Date(prev.timestamp).toDateString();
+    grouped.push({...m, sameAuthor, newDay});
   });
 
   el.innerHTML = grouped.map(m => {
@@ -420,8 +437,9 @@ async function loadChat() {
     const content = (m.content||'').substring(0,300);
     if (!content && !m.attachments?.length) return ''; // 跳過空訊息
     const headerHtml = m.sameAuthor ? '' : `<div class="msg-header"><span class="msg-name ${ai.cls}">${ai.name}</span><span class="msg-time">${time}</span></div>`;
+    const dayDivider = m.newDay ? `<div class="sys-msg" style="margin:8px 0">── ${new Date(m.timestamp).toLocaleDateString('zh-HK')} ──</div>` : '';
     const attHtml = (m.attachments||[]).map(a=>`<div style="font-size:.75rem;color:var(--blue);margin-top:4px">📎 ${a.filename}</div>`).join('');
-    return `<div class="msg" style="${m.sameAuthor?'margin-top:-4px':''}">
+    return `${dayDivider}<div class="msg" style="${m.sameAuthor?'margin-top:-4px':''}">
       <div class="msg-av" style="${m.sameAuthor?'visibility:hidden':''}">${ai.emoji}</div>
       <div class="msg-body">
         ${headerHtml}
@@ -436,13 +454,7 @@ async function loadChat() {
 // ── XP 系統 ──
 const XP_TABLE = { '低': 1, '中': 2, '高': 3 };
 const LEVEL_XP = [0, 50, 150, 350, 750, 1550]; // Lv0−6 要求 XP
-
-const AI_NAMES = {
-  '小粘蛞 AI二號': 'AI二號',
-  'AI一號': 'AI一號',
-  'AI二號': 'AI二號',
-  'AI三號': 'AI三號',
-};
+const LEVEL_NAMES = ['新手', '學徒', '能手', '達人', '專家', '大席', '傳奇'];
 
 function calcLevel(xp) {
   let lv = 0;
@@ -502,8 +514,8 @@ async function loadStats() {
     return `<div class="lb-row">
       <div class="lb-rank">${rankEmoji(i)}</div>
       <div class="lb-info">
-        <div class="lb-name">${AI_EMOJI[ai.name]||''} ${ai.name} <span class="lb-badge">Lv.${lv}</span></div>
-        <div class="lb-level">完成 ${ai.done} 個任務${ai.name==='AI二號'?` · 生成 ${generatedCount} 個任務 (+${(generatedCount*0.5).toFixed(1)} XP)`:''} · ${ai.xp.toFixed(1)} / ${nextXP} XP (下一級)</div>
+        <div class="lb-name">${AI_EMOJI[ai.name]||''} ${ai.name} <span class="lb-badge">Lv.${lv} ${LEVEL_NAMES[lv]||''}</span></div>
+        <div class="lb-level">完成 ${ai.done} 個任務${ai.name==='小粘蛞 AI二號'||ai.name==='AI二號'?` · 生成 ${generatedCount} 個任務 (+${(generatedCount*0.5).toFixed(1)} XP)`:''} · ${ai.xp.toFixed(1)} / ${nextXP} XP (下一級)</div>
         <div class="lb-xp-bar"><div class="lb-xp-fill" style="width:${pct}%"></div></div>
       </div>
       <div class="lb-xp-num">⭐ ${ai.xp.toFixed(1)} XP</div>
@@ -637,8 +649,8 @@ async function loadRanking() {
     return `<div class="lb-row">
       <div class="lb-rank">${medals[i]||i+1}</div>
       <div class="lb-info">
-        <div class="lb-name">${AI_EMOJI[ai.name]||''} ${ai.name} <span class="lb-badge">Lv.${lv}</span></div>
-        <div class="lb-level">完成 ${ai.done} 個任務 · ${ai.xp.toFixed(1)} / ${nextXP} XP → Lv.${lv+1}</div>
+        <div class="lb-name">${AI_EMOJI[ai.name]||''} ${ai.name} <span class="lb-badge">Lv.${lv} ${LEVEL_NAMES[lv]||''}</span></div>
+        <div class="lb-level">完成 ${ai.done} 個任務 · ${ai.xp.toFixed(1)} / ${nextXP} XP → Lv.${lv+1} ${LEVEL_NAMES[lv+1]||''}</div>
         <div class="lb-xp-bar"><div class="lb-xp-fill" style="width:${pct}%"></div></div>
       </div>
       <div style="text-align:right">
@@ -804,9 +816,12 @@ document.addEventListener('keydown', e => {
 </body>
 <!-- Footer -->
 <div style="text-align:center;padding:16px 24px;border-top:1px solid var(--border);font-size:.72rem;color:var(--muted);margin-top:20px">
-  🦀 AI 協作平台 v2.0 &nbsp;| 
-  建置: <span id="build-time"></span> &nbsp;| 
-  快捷鍵: 1-4 切換 Tab · R 刷新 · T 主題 · / 搜尋
+  🦀 AI 協作平台 <strong style="color:var(--blue)">v2.2</strong>
+  &nbsp;·  建置: <span id="build-time"></span>
+  &nbsp;·  快捷鍵: <kbd style="background:var(--card);padding:1px 5px;border-radius:3px;border:1px solid var(--border)">1-4</kbd> Tab
+  <kbd style="background:var(--card);padding:1px 5px;border-radius:3px;border:1px solid var(--border)">R</kbd> 刷新
+  <kbd style="background:var(--card);padding:1px 5px;border-radius:3px;border:1px solid var(--border)">T</kbd> 主題
+  <kbd style="background:var(--card);padding:1px 5px;border-radius:3px;border:1px solid var(--border)">/</kbd> 搜尋
 </div>
 
 </body>
