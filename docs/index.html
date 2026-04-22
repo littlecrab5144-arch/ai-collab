@@ -53,7 +53,7 @@
     #back-top { position:fixed; bottom:24px; right:24px; background:linear-gradient(135deg,var(--blue),var(--purple)); color:#fff; border:none; width:40px; height:40px; border-radius:50%; cursor:pointer; display:none; font-size:1.1rem; font-weight:700; box-shadow:0 4px 15px rgba(88,166,255,0.4); z-index:100; transition:all .2s; align-items:center; justify-content:center; }
     #back-top:hover { transform:scale(1.1) rotate(360deg); box-shadow:0 6px 25px rgba(88,166,255,0.6); }
 
-    .ai-bar { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; padding: 14px 24px; border-bottom: 1px solid var(--border); }
+    .ai-bar { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; padding: 14px 24px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, rgba(88,166,255,0.02) 0%, transparent 100%); }
     .ai-chip { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; transition: all 0.3s; }
     .ai-chip.busy { border-color: var(--yellow); box-shadow: 0 0 8px rgba(210,153,34,0.2); animation: chipPulse 2s infinite; }
     .ai-chip.standby { border-color: var(--green); }
@@ -366,6 +366,8 @@ function renderTaskCard(task) {
       <span style="font-size:.68rem;color:${diffColor};border:1px solid ${diffColor};padding:2px 7px;border-radius:20px">${task.difficulty}難度</span>
       ${countdownHtml}
       <span class="label ${sc}">${task.status}</span>
+      <button onclick="event.stopPropagation();navigator.clipboard.writeText(window.location.origin+'?task=${task.taskId}').then(()=>showToast('🔗 連結已複製'))" 
+        style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem;padding:2px 4px" title="複製連結">🔗</button>
     </div>
   </div>`;
 }
