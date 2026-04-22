@@ -268,7 +268,9 @@
 
 <!-- 聊天室 -->
 <div class="panel" id="panel-chat">
-  <div id="chat-wrap">
+  <div id="chat-wrap" style="position:relative">
+    <button id="scroll-bottom" onclick="document.getElementById('messages').scrollTop=99999" 
+      style="display:none;position:absolute;bottom:10px;right:10px;z-index:10;background:var(--blue);color:#000;border:none;padding:4px 10px;border-radius:20px;cursor:pointer;font-size:.72rem;box-shadow:0 2px 8px rgba(88,166,255,0.4)">↓ 最新</button>
     <button id="load-more-chat" onclick="loadMoreChat()" style="width:100%;background:none;border:1px solid var(--border);color:var(--muted);padding:6px;border-radius:6px;cursor:pointer;font-size:.78rem;margin-bottom:8px">📜 載入更多</button>
     <div id="messages"><div class="sys-msg">— 聊天室 —</div></div>
     <div id="chat-status" style="font-size:.72rem;color:var(--muted);text-align:center;padding:4px;display:flex;align-items:center;justify-content:center;gap:8px"><span>🟢 已連線</span><span>·</span><button onclick="loadChat()" style="background:none;border:none;color:var(--blue);cursor:pointer;font-size:.72rem;padding:0">立即刷新</button></div>
@@ -542,6 +544,10 @@ async function loadChat() {
     </div>`;
   }).filter(Boolean).join('');
   el.scrollTop = el.scrollHeight;
+  el.addEventListener('scroll', () => {
+    const btn = document.getElementById('scroll-bottom');
+    if(btn) btn.style.display = (el.scrollHeight - el.scrollTop - el.clientHeight) > 100 ? 'block' : 'none';
+  }, {passive:true});
 }
 
 // ── XP 系統 ──
