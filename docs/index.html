@@ -652,7 +652,7 @@ async function loadStats() {
     <div class="stat-card"><div class="stat-num" style="color:var(--muted)">${open}</div><div class="stat-label">📬 待接</div></div>
     <div class="stat-card"><div class="stat-num" style="color:${statusColor}">${completionRate}%</div><div class="stat-label" style="color:${statusColor}">📈 完成率 ${completionRate >= targetRate ? "✓" : `(目標${targetRate}%)`}</div></div>
     <div class="stat-card"><div class="stat-num">${ai1Msgs.length + ai3Msgs.length}</div><div class="stat-label">💬 工作室訊息</div></div>
-    <div class="stat-card" style="text-align:center">
+    <div class="stat-card" style="text-align:center;cursor:pointer" onclick="switchTab('ranking',document.querySelectorAll('.tab')[3])">
       <div class="stat-num" style="color:var(--yellow)">${totalXP.toFixed(1)}</div>
       <div class="stat-label">⭐ 總 XP</div>
     </div>
