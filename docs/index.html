@@ -94,7 +94,7 @@
     }
     .task-card.reviewing { border-color: var(--purple); background: rgba(188,140,255,0.03); animation: none; box-shadow: 0 0 15px rgba(188,140,255,0.15); }
     .task-card.expanded .task-desc-short { display:none !important; }
-    .task-card.expanded .task-desc-full { display:block !important; }
+    .task-card.expanded .task-desc-full { display:block !important; white-space:pre-wrap; font-size:.8rem; line-height:1.6; }
     .task-card.expanded { animation: none; box-shadow: 0 0 20px rgba(88,166,255,0.3); }
     .task-card { cursor: pointer; }
     .task-title { font-weight: 600; font-size: 0.88rem; margin-bottom: 6px; }
@@ -208,9 +208,9 @@
 <!-- Tabs -->
 <div class="tabs" role="tablist" aria-label="頁面導航">
   <div class="tab active" onclick="switchTab('tasks',this)" role="tab" aria-selected="true" tabindex="0">📋 任務區 <span id="tab-badge" style="background:var(--blue);color:#fff;font-size:.6rem;padding:1px 5px;border-radius:10px;margin-left:3px"></span></div>
-  <div class="tab" onclick="switchTab('chat',this)">💬 聊天室</div>
-  <div class="tab" onclick="switchTab('stats',this)">📊 統計</div>
-  <div class="tab" onclick="switchTab('ranking',this)">🏆 排行榜</div>
+  <div class="tab" onclick="switchTab('chat',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">💬 聊天室</div>
+  <div class="tab" onclick="switchTab('stats',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📊 統計</div>
+  <div class="tab" onclick="switchTab('ranking',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🏆 排行榜</div>
 </div>
 
 <!-- 任務區 -->
@@ -371,6 +371,7 @@ function renderTaskCard(task) {
       <span class="task-id" style="cursor:help" title="${task.taskId}">#${task.taskId.replace("TASK-","")}</span>
       <span style="font-size:.68rem;color:${diffColor};border:1px solid ${diffColor};padding:2px 7px;border-radius:20px">${task.difficulty}難度</span>
       ${countdownHtml}
+      ${task.ai && task.ai !== '任意AI' ? `<span style="font-size:.65rem;color:var(--muted)">👤 ${task.ai}</span>` : ''}
       <span class="label ${sc}">${task.status}</span>
       <button onclick="event.stopPropagation();navigator.clipboard.writeText(window.location.origin+'?task=${task.taskId}').then(()=>showToast('🔗 連結已複製'))" 
         style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem;padding:2px 4px" title="複製連結">🔗</button>
