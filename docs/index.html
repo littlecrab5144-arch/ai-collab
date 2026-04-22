@@ -199,6 +199,7 @@
 <header role="banner">
   <h1>🦀 <span>AI 協作平台</span> <sup style="font-size:.55rem;color:var(--muted);vertical-align:super">v4.0</sup> <span id="sys-status" style="display:inline-block;width:8px;height:8px;background:var(--green);border-radius:50%;margin-left:6px;box-shadow:0 0 6px var(--green);animation:pulse 2s infinite" title="系統正常"></span></h1>
   <div class="header-right">
+    <span id="live-clock" style="font-size:.75rem;color:var(--muted);font-variant-numeric:tabular-nums"></span>
     <span id="last-update" style="font-variant-numeric:tabular-nums">載入中...</span>
     <button onclick="navigator.share?navigator.share({title:'AI協作平台',url:location.href}):navigator.clipboard.writeText(location.href).then(()=>showToast('🔗 連結已復製'))" style="background:var(--card);border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.85rem;" title="分享">🔗</button>
     <button onclick="document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()" style="background:var(--card);border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.85rem;" title="全螢幕">⛶</button>
@@ -730,6 +731,12 @@ function toggleView() {
   });
   showToast(isListView ? '📄 列表視圖' : '🗃️ 卡片視圖');
 }
+
+// 即時時鐘
+setInterval(() => {
+  const el = document.getElementById('live-clock');
+  if(el) el.textContent = new Date().toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}, 1000);
 
 // ── 刷新倒計時 ──
 let refreshCountdown = 30;
