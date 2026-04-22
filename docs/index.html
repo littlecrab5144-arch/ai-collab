@@ -418,6 +418,12 @@ function renderTaskCard(task) {
 
 // ── 載入任務 ──
 async function loadTasks() {
+  // 骨架屏
+  const ipEl = document.getElementById('tasks-inprogress');
+  const openEl2 = document.getElementById('tasks-open');
+  if(ipEl && !ipEl.querySelector('.task-card')) ipEl.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+${[1,2,3].map(()=>`<div style="background:linear-gradient(90deg,var(--card) 25%,rgba(255,255,255,0.05) 50%,var(--card) 75%);background-size:200%;animation:skeleton 1.5s infinite;border-radius:10px;height:120px"></div>`).join('')}
+</div>`;
   const msgs = await fetchDiscord(CHANNELS.tasks, 50);
   const tasks = [];
   msgs.forEach(m => {
