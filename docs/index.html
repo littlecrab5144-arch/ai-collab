@@ -190,7 +190,7 @@
 </head>
 <body>
 <header role="banner">
-  <h1>🦀 <span>AI 協作平台</span> <sup style="font-size:.55rem;color:var(--muted);vertical-align:super">v2.8</sup> <span id="sys-status" style="display:inline-block;width:8px;height:8px;background:var(--green);border-radius:50%;margin-left:6px;box-shadow:0 0 6px var(--green);animation:pulse 2s infinite" title="系統正常"></span></h1>
+  <h1>🦀 <span>AI 協作平台</span> <sup style="font-size:.55rem;color:var(--muted);vertical-align:super">v4.0</sup> <span id="sys-status" style="display:inline-block;width:8px;height:8px;background:var(--green);border-radius:50%;margin-left:6px;box-shadow:0 0 6px var(--green);animation:pulse 2s infinite" title="系統正常"></span></h1>
   <div class="header-right">
     <span id="last-update">載入中...</span>
     <button onclick="navigator.share?navigator.share({title:'AI協作平台',url:location.href}):navigator.clipboard.writeText(location.href).then(()=>showToast('🔗 連結已復製'))" style="background:var(--card);border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.85rem;" title="分享">🔗</button>
@@ -858,6 +858,17 @@ function setFilter(f, btn) {
 }
 
 // ── 搜尋過濾 ──
+function highlightText(el, kw) {
+  if(!kw || !el) return;
+  const text = el.textContent;
+  const idx = text.toLowerCase().indexOf(kw.toLowerCase());
+  if(idx >= 0) {
+    el.innerHTML = text.substring(0,idx) + 
+      `<mark style="background:rgba(88,166,255,0.3);color:inherit;border-radius:2px">${text.substring(idx,idx+kw.length)}</mark>` + 
+      text.substring(idx+kw.length);
+  }
+}
+
 function filterTasks(kw) {
   kw = kw.toLowerCase();
   document.querySelectorAll('#tasks-open .task-card').forEach(c => {
@@ -974,7 +985,7 @@ document.addEventListener('keydown', e => {
 </body>
 <!-- Footer -->
 <div style="text-align:center;padding:16px 24px;border-top:1px solid var(--border);font-size:.72rem;color:var(--muted);margin-top:20px">
-  🦀 AI 協作平台 <strong style="color:var(--blue)">v2.2</strong>
+  🦀 AI 協作平台 <strong style="color:var(--blue)">v4.0</strong>
   &nbsp;·  建置: <span id="build-time"></span>
   &nbsp;·  快捷鍵: <kbd style="background:var(--card);padding:1px 5px;border-radius:3px;border:1px solid var(--border)">1-4</kbd> Tab
   <kbd style="background:var(--card);padding:1px 5px;border-radius:3px;border:1px solid var(--border)">R</kbd> 刷新
