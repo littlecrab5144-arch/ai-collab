@@ -673,6 +673,28 @@ async function loadStats() {
   `;
 }
 
+
+// 懶加載動畫（Intersection Observer）
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if(entry.isIntersecting) {
+      entry.target.style.opacity = '1';
+      entry.target.style.transform = 'none';
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1 });
+
+function observeCards() {
+  document.querySelectorAll('.task-card:not(.observed)').forEach(card => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(10px)';
+    card.style.transition = 'opacity .3s ease, transform .3s ease';
+    card.classList.add('observed');
+    observer.observe(card);
+  });
+}
+
 // ── 展開/收起完成任務 ──
 function toggleDone() {
   const el = document.getElementById('tasks-done');
