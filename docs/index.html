@@ -355,6 +355,10 @@ function statusClass(s) {
 function renderTaskCard(task) {
   const sc = statusClass(task.status);
   const diffColor = task.difficulty==='高'?'var(--red)':task.difficulty==='中'?'var(--yellow)':'var(--green)';
+  // Shimmer on new tasks (within 5 min)
+  const isNew = task.createdAt && (Date.now() - new Date(task.createdAt).getTime()) < 5*60*1000;
+  const newBadge = isNew ? '<span style="position:absolute;top:6px;right:6px;background:var(--blue);color:#fff;font-size:.55rem;padding:1px 5px;border-radius:3px;animation:pulse 1s infinite">NEW</span>' : '';
+  
   const borderStyle = task.difficulty==='高' 
     ? `border-left:3px solid ${diffColor};box-shadow:inset 3px 0 0 ${diffColor},0 0 0 1px rgba(248,81,73,0.1)`
     : `border-left:3px solid ${diffColor}`;
@@ -949,6 +953,7 @@ function addXP(amount) {
   const newLevel = getLevel(newXP);
   showXPGain(amount);
   if (newLevel > oldLevel) showLevelUp(newLevel);
+  checkMilestone(newXP);
   updateXPBar(); return newXP;
 }
 function getLevel(xp) {
