@@ -1123,6 +1123,9 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { document.getElementById('task-search').value=''; filterTasks(''); }
   if ((e.ctrlKey || e.metaKey) && e.key === 'r') { e.preventDefault(); loadAll(); showToast('🔄 刷新中...'); }
   if (e.key === 'h' || e.key === 'H') { window.scrollTo({top:0,behavior:'smooth'}); }
+  if (e.key === '?') {
+    showToast('⌨️ 快捷鍵: 1-4 Tab | R 刷新 | T 主題 | / 搜尋 | H 頂部 | ESC 清除 | Ctrl+R 強制刷新');
+  }
   if (e.key === 'f' || e.key === 'F') { document.getElementById('task-search')?.focus(); e.preventDefault(); }
 });
 </script>
