@@ -629,12 +629,14 @@ async function loadStats() {
 
   // 計算總 XP
   const totalXP = Object.values(xpMap).reduce((a,b)=>a+b,0);
+  const targetRate = 80; // 目標完成率
+  const statusColor = completionRate >= targetRate ? 'var(--green)' : completionRate >= 50 ? 'var(--yellow)' : 'var(--red)';
   document.getElementById('stats-grid').innerHTML = `
     <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">總任務數</div></div>
     <div class="stat-card"><div class="stat-num" style="color:var(--green)">${done}</div><div class="stat-label">✅ 已完成</div></div>
     <div class="stat-card"><div class="stat-num" style="color:var(--yellow)">${inprog}</div><div class="stat-label">⚡ 進行中</div></div>
     <div class="stat-card"><div class="stat-num" style="color:var(--muted)">${open}</div><div class="stat-label">📬 待接</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:var(--blue)">${completionRate}%</div><div class="stat-label">📈 完成率</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:${statusColor}">${completionRate}%</div><div class="stat-label" style="color:${statusColor}">📈 完成率 ${completionRate >= targetRate ? "✓" : `(目標${targetRate}%)`}</div></div>
     <div class="stat-card"><div class="stat-num">${ai1Msgs.length + ai3Msgs.length}</div><div class="stat-label">💬 工作室訊息</div></div>
     <div class="stat-card" style="text-align:center">
       <div class="stat-num" style="color:var(--yellow)">${totalXP.toFixed(1)}</div>
