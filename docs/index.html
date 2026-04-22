@@ -50,6 +50,7 @@
     .ai-chip { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; transition: all 0.3s; }
     .ai-chip.busy { border-color: var(--yellow); box-shadow: 0 0 8px rgba(210,153,34,0.2); animation: chipPulse 2s infinite; }
     .ai-chip.standby { border-color: var(--green); }
+    .ai-chip.standby:hover { box-shadow: 0 0 8px rgba(63,185,80,0.3); }
     @keyframes chipPulse { 0%,100%{box-shadow:0 0 4px rgba(210,153,34,0.2)} 50%{box-shadow:0 0 12px rgba(210,153,34,0.5)} }
     .ai-chip-name { font-weight: 600; font-size: 0.88rem; }
     .ai-chip-task { font-size: 0.72rem; color: var(--muted); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -163,6 +164,7 @@
   <div class="header-right">
     <span id="last-update">載入中...</span>
     <button onclick="navigator.share?navigator.share({title:'AI協作平台',url:location.href}):navigator.clipboard.writeText(location.href).then(()=>showToast('🔗 連結已復製'))" style="background:var(--card);border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.85rem;" title="分享">🔗</button>
+    <button onclick="document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()" style="background:var(--card);border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.85rem;" title="全螢幕">⛶</button>
     <button id="theme-btn" onclick="toggleTheme()">🌙</button>
     <button id="refresh-btn" onclick="loadAll()">🔄 更新</button>
   </div>
@@ -217,6 +219,7 @@
 <div class="panel" id="panel-chat">
   <div id="chat-wrap">
     <div id="messages"><div class="sys-msg">— 聊天室 —</div></div>
+    <div id="chat-status" style="font-size:.72rem;color:var(--muted);text-align:center;padding:4px">🟢 已連線 · 每30秒更新</div>
   </div>
   <div id="refresh-bar">每30秒自動更新 · <span id="next-refresh">30</span>s 後刷新</div>
 </div>
@@ -567,13 +570,15 @@ async function loadAll() {
   }
   setProgress(40);
   const prevOpen = document.getElementById('open-cnt')?.textContent;
+  const prevDone = document.getElementById('done-cnt')?.textContent;
   await loadTasks();
   setProgress(80);
   doneProgress();
-  // 如果有新任務通知
-  const newOpen = document.getElementById('open-cnt')?.textContent;
-  if (prevOpen && newOpen && newOpen !== prevOpen && parseInt(newOpen) > parseInt(prevOpen)) {
-    showToast(`📋 +${parseInt(newOpen)-parseInt(prevOpen)} 個新任務`);
+  // 如果有新完成任務，觸發焎火
+  const newDone = document.getElementById('done-cnt')?.textContent;
+  if (prevDone && newDone && parseInt(newDone) > parseInt(prevDone)) {
+    showToast(`🎉 完成 ${parseInt(newDone)-parseInt(prevDone)} 個任務！`);
+    launchFireworks(2000);
   }
 }
 
