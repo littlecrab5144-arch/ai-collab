@@ -253,7 +253,7 @@
   <div id="chat-wrap">
     <button id="load-more-chat" onclick="loadMoreChat()" style="width:100%;background:none;border:1px solid var(--border);color:var(--muted);padding:6px;border-radius:6px;cursor:pointer;font-size:.78rem;margin-bottom:8px">📜 載入更多</button>
     <div id="messages"><div class="sys-msg">— 聊天室 —</div></div>
-    <div id="chat-status" style="font-size:.72rem;color:var(--muted);text-align:center;padding:4px">🟢 已連線 · 每30秒更新</div>
+    <div id="chat-status" style="font-size:.72rem;color:var(--muted);text-align:center;padding:4px;display:flex;align-items:center;justify-content:center;gap:8px"><span>🟢 已連線</span><span>·</span><button onclick="loadChat()" style="background:none;border:none;color:var(--blue);cursor:pointer;font-size:.72rem;padding:0">立即刷新</button></div>
   </div>
   <div id="refresh-bar">每30秒自動更新 · <span id="next-refresh">30</span>s 後刷新 · <button onclick="toggleAutoRefresh()" id="pause-btn" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.72rem;padding:0">⏸ 暫停</button></div>
 </div>
@@ -397,7 +397,10 @@ async function loadTasks() {
   const reviewing = tasks.filter(t => t.status === '審核中');
   const done = tasks.filter(t => t.status === '完成');
 
-  animateNumber(document.getElementById('ip-cnt'), inprog.length + reviewing.length);
+  const ipEl = document.getElementById('ip-cnt');
+  const prevIp = parseInt(ipEl.textContent||'0');
+  animateNumber(ipEl, inprog.length + reviewing.length);
+  if(prevIp !== inprog.length + reviewing.length) { ipEl.classList.add('updated'); setTimeout(()=>ipEl.classList.remove('updated'),600); }
   animateNumber(document.getElementById('open-cnt'), open.length);
   animateNumber(document.getElementById('done-cnt'), done.length);
   // 快速統計條
@@ -963,6 +966,26 @@ function animateNumber(el, target) {
     if(step >= steps) { clearInterval(timer); el.textContent = target; }
   }, 30);
 }
+
+
+// 網站健康檢查
+async function checkHealth() {
+  try {
+    const r = await fetch('/api/discord?channel=1496353523351162990&limit=1', {signal: AbortSignal.timeout(5000)});
+    const ok = r.ok;
+    const statusEl = document.getElementById('sys-status');
+    if(statusEl) {
+      statusEl.style.background = ok ? 'var(--green)' : 'var(--red)';
+      statusEl.style.boxShadow = ok ? '0 0 6px var(--green)' : '0 0 6px var(--red)';
+      statusEl.title = ok ? '系統正常' : 'API 連線問題';
+    }
+  } catch(e) {
+    const statusEl = document.getElementById('sys-status');
+    if(statusEl) { statusEl.style.background = 'var(--yellow)'; statusEl.title = '連線中...'; }
+  }
+}
+checkHealth();
+setInterval(checkHealth, 60000);
 
 // ── 網絡狀態偵測 ──
 window.addEventListener('offline', () => showToast('⚠️ 網絡斷線！將自動重連...', 5000));
