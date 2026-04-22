@@ -899,8 +899,10 @@ backBtn.id = 'back-top'; backBtn.innerHTML = '↑';
 backBtn.onclick = () => window.scrollTo({top:0, behavior:'smooth'});
 document.body.appendChild(backBtn);
 window.addEventListener('scroll', () => {
-  backBtn.style.display = window.scrollY > 300 ? 'flex' : 'none';
-});
+  const show = window.scrollY > 200;
+  backBtn.style.display = show ? 'flex' : 'none';
+  backBtn.style.opacity = show ? '1' : '0';
+}, {passive: true});
 
 // ── 載入進度條 ──
 const loadBar = document.createElement('div');
@@ -993,6 +995,15 @@ async function checkHealth() {
 }
 checkHealth();
 setInterval(checkHealth, 60000);
+
+
+// 頁面可見時才刷新
+document.addEventListener('visibilitychange', () => {
+  if(!document.hidden) {
+    loadAll();
+    showToast('👁 頁面重新啟用，刷新資料');
+  }
+});
 
 // ── 網絡狀態偵測 ──
 window.addEventListener('offline', () => showToast('⚠️ 網絡斷線！將自動重連...', 5000));
