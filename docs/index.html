@@ -544,7 +544,7 @@ async function loadChat() {
 
   el.innerHTML = grouped.map(m => {
     const ai = aiMap[m.author?.username] || {cls:'', emoji:'👤', name: m.author?.username || '未知'};
-    const now = new Date(); const msgDate = new Date(m.timestamp); const isToday = msgDate.toDateString()===now.toDateString(); const time = m.timestamp ? (isToday ? msgDate.toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'}) : msgDate.toLocaleDateString('zh-HK',{month:'short',day:'numeric'}) + ' ' + msgDate.toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'})) : '';
+    const now = new Date(); const msgDate = new Date(m.timestamp); const yesterday = new Date(now); yesterday.setDate(yesterday.getDate()-1); const isToday = msgDate.toDateString()===now.toDateString(); const isYesterday = msgDate.toDateString()===yesterday.toDateString(); const time = m.timestamp ? (isToday ? msgDate.toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'}) : isYesterday ? '昨日 '+msgDate.toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'}) : msgDate.toLocaleDateString('zh-HK',{month:'short',day:'numeric'}) + ' ' + msgDate.toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'})) : '';
     const content = (m.content||'').substring(0,300);
     if (!content && !m.attachments?.length) return ''; // 跳過空訊息
     const headerHtml = m.sameAuthor ? '' : `<div class="msg-header"><span class="msg-name ${ai.cls}">${ai.name}</span><span class="msg-time">${time}</span></div>`;
