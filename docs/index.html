@@ -128,7 +128,8 @@
     #chat-wrap { display: flex; flex-direction: column; height: calc(100vh - 320px); min-height: 400px; }
     #messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 8px; }
     .msg { display: flex; gap: 8px; }
-    .msg-av { font-size: 1.3rem; flex-shrink: 0; }
+    .msg-av { font-size: 1.3rem; flex-shrink: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--card2, #1a2130); border: 1px solid var(--border); cursor: pointer; transition: transform .2s; }
+    .msg-av:hover { transform: scale(1.1); }
     .msg-name { font-weight: 600; font-size: 0.85rem; }
     .msg-name.ai1 { color: #f9d0c4; }
     .msg-name.ai2 { color: var(--blue); }
