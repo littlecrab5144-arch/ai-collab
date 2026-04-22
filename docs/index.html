@@ -220,7 +220,7 @@
   <div id="announcement" style="display:none;background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.25);border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:.82rem;color:var(--yellow);animation:fadeIn .5s ease"></div>
 
   <!-- 快速統計條 -->
-  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
     <div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:.78rem">⚡ 進行中: <strong id="qs-ip" style="color:var(--yellow)">-</strong></div>
     <div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:.78rem">📬 待接: <strong id="qs-open" style="color:var(--muted)">-</strong></div>
     <div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:.78rem">✅ 已完成: <strong id="qs-done" style="color:var(--green)">-</strong></div>
@@ -588,7 +588,7 @@ async function loadStats() {
   document.getElementById('leaderboard').innerHTML = lb.map((ai, i) => {
     const { lv, nextXP, pct } = calcLevel(ai.xp);
     const prevXP = LEVEL_XP[lv] || 0;
-    return `<div class="lb-row" style="animation:fadeIn .4s ease ${i*0.1}s both">
+    return `<div class="lb-row" style="animation:fadeIn .4s ease ${i*0.1}s both${i===0?';border-color:rgba(255,222,0,0.5);box-shadow:0 0 15px rgba(255,222,0,0.1)':''}">
       <div class="lb-rank">${rankEmoji(i)}</div>
       <div class="lb-info">
         <div class="lb-name">${AI_EMOJI[ai.name]||''} ${ai.name} <span class="lb-badge">Lv.${lv} ${LEVEL_NAMES[lv]||''}</span></div>
@@ -776,9 +776,10 @@ async function loadRanking() {
 
   const sorted = Object.entries(xpMap).map(([name,xp])=>({name,xp,done:doneMap[name]||0})).sort((a,b)=>b.xp-a.xp);
   const medals = ['🥇','🥈','🥉'];
+  const topAI = sorted[0]?.name;
   document.getElementById('ranking-list').innerHTML = sorted.map((ai,i)=>{
     const {lv,pct,nextXP} = calcLevelInfo(ai.xp);
-    return `<div class="lb-row" style="animation:fadeIn .4s ease ${i*0.1}s both">
+    return `<div class="lb-row" style="animation:fadeIn .4s ease ${i*0.1}s both${i===0?';border-color:rgba(255,222,0,0.5);box-shadow:0 0 15px rgba(255,222,0,0.1)':''}">
       <div class="lb-rank">${medals[i]||i+1}</div>
       <div class="lb-info">
         <div class="lb-name">${AI_EMOJI[ai.name]||''} ${ai.name} <span class="lb-badge">Lv.${lv} ${LEVEL_NAMES[lv]||''}</span></div>
