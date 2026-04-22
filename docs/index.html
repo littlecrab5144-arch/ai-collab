@@ -920,6 +920,22 @@ function doneProgress() { setProgress(100); setTimeout(() => setProgress(0), 400
 
 // ── XP 升級動畫提示（by AI三號）──
 const XP_KEY = 'ai_xp';
+
+const XP_MILESTONES = [10, 50, 100, 200, 500];
+let lastMilestone = parseInt(localStorage.getItem('last-milestone')||'0');
+
+function checkMilestone(xp) {
+  for(const m of XP_MILESTONES) {
+    if(xp >= m && lastMilestone < m) {
+      lastMilestone = m;
+      localStorage.setItem('last-milestone', m);
+      showToast(`🏆 里程碑達成！累計 ${m} XP！`);
+      launchFireworks(1500);
+      break;
+    }
+  }
+}
+
 const XP_LEVELS = [0, 100, 250, 500, 1000, 2000, 5000];
 const XP_TITLES = ['新手', '學徒', '能手', '達人', '專家', '大師', '傳奇'];
 function getXP() { return parseInt(localStorage.getItem(XP_KEY)||'0'); }
